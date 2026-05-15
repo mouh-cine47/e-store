@@ -98,5 +98,6 @@ foreach ($cart as $item) {
             </form>
         <?php endif; ?>
     </div>
+
 </body>
 </html>

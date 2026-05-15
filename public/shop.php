@@ -3,6 +3,12 @@ session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
 $pdo = Database::connection();
 
+$productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");
+$hasProducts = (bool)$productsTableStmt->fetch();
+
+$categoriesTableStmt = $pdo->query("SHOW TABLES LIKE 'categories'");
+$hasCategories = (bool)$categoriesTableStmt->fetch();
+
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/login.php');
     exit();
@@ -16,6 +22,10 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
 $search = trim($_GET['search'] ?? '');
 $categoryId = trim($_GET['category'] ?? '');
 $brand = trim($_GET['brand'] ?? '');
+$color = trim($_GET['color'] ?? '');
+$size = trim($_GET['size'] ?? '');
+$collection = trim($_GET['collection'] ?? '');
+$section = trim($_GET['section'] ?? '');
 $minPrice = trim($_GET['min_price'] ?? '');
 $maxPrice = trim($_GET['max_price'] ?? '');
 
@@ -39,6 +49,32 @@ if ($brand !== '') {
     $params['brand'] = $brand;
 }
 
+if ($color !== '') {
+    $filters[] = 'p.color = :color';
+    $params['color'] = $color;
+}
+
+if ($size !== '') {
+    $filters[] = 'p.size = :size';
+    $params['size'] = $size;
+}
+
+if ($collection !== '') {
+    $filters[] = 'p.collection_name = :collection';
+    $params['collection'] = $collection;
+}
+
+$sectionLabel = '';
+if ($section !== '') {
+    $sectionLabel = strtolower($section);
+    if ($sectionLabel === 'women' || $sectionLabel === 'men') {
+        $filters[] = 'c.name = :section_category';
+        $params['section_category'] = ucfirst($sectionLabel);
+    } else {
+        $sectionLabel = '';
+    }
+}
+
 if ($minPrice !== '' && is_numeric($minPrice)) {
     $filters[] = 'p.price >= :min_price';
     $params['min_price'] = $minPrice;
@@ -54,21 +90,48 @@ if (count($filters) > 0) {
     $whereSql = 'WHERE ' . implode(' AND ', $filters);
 }
 
-$categoriesStmt = $pdo->query('SELECT id, name FROM categories ORDER BY name');
-$categories = $categoriesStmt->fetchAll();
+$categories = [];
+if ($hasCategories) {
+    $categoriesStmt = $pdo->query('SELECT id, name FROM categories ORDER BY name');
+    $categories = $categoriesStmt->fetchAll();
+}
 
-$brandsStmt = $pdo->query('SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand <> "" ORDER BY brand');
-$brands = $brandsStmt->fetchAll();
+$brands = [];
+if ($hasProducts) {
+    $brandsStmt = $pdo->query('SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand <> "" ORDER BY brand');
+    $brands = $brandsStmt->fetchAll();
+}
 
-$sql = 'SELECT p.id, p.name, p.price, p.stock, p.image, c.name AS category_name '
-    . 'FROM products p '
-    . 'LEFT JOIN categories c ON c.id = p.category_id '
-    . $whereSql . ' '
-    . 'ORDER BY p.created_at DESC';
+$colors = [];
+if ($hasProducts) {
+    $colorsStmt = $pdo->query('SELECT DISTINCT color FROM products WHERE color IS NOT NULL AND color <> "" ORDER BY color');
+    $colors = $colorsStmt->fetchAll();
+}
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$products = $stmt->fetchAll();
+$sizes = [];
+if ($hasProducts) {
+    $sizesStmt = $pdo->query('SELECT DISTINCT size FROM products WHERE size IS NOT NULL AND size <> "" ORDER BY size');
+    $sizes = $sizesStmt->fetchAll();
+}
+
+$collections = [];
+if ($hasProducts) {
+    $collectionsStmt = $pdo->query('SELECT DISTINCT collection_name FROM products WHERE collection_name IS NOT NULL AND collection_name <> "" ORDER BY collection_name');
+    $collections = $collectionsStmt->fetchAll();
+}
+
+$products = [];
+if ($hasProducts) {
+    $sql = 'SELECT p.id, p.name, p.price, p.stock, p.image, c.name AS category_name '
+        . 'FROM products p '
+        . 'LEFT JOIN categories c ON c.id = p.category_id '
+        . $whereSql . ' '
+        . 'ORDER BY p.created_at DESC';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $products = $stmt->fetchAll();
+}
 ?>
 
 <!DOCTYPE html>
@@ -92,6 +155,15 @@ $products = $stmt->fetchAll();
     </nav>
 
     <div class="container py-4">
+        <?php if (!$hasProducts): ?>
+            <div class="alert alert-warning">Products table is missing. Import database.sql to browse products.</div>
+        <?php endif; ?>
+        <?php if (!$hasCategories): ?>
+            <div class="alert alert-warning">Categories table is missing. Import database.sql to browse categories.</div>
+        <?php endif; ?>
+        <?php if ($sectionLabel !== '' && !$hasCategories): ?>
+            <div class="alert alert-info">Women/Men sections require categories named Women and Men.</div>
+        <?php endif; ?>
         <div class="row">
             <div class="col-lg-3 mb-4">
                 <div class="card shadow-sm">
@@ -125,6 +197,39 @@ $products = $stmt->fetchAll();
                                 </select>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label">Color</label>
+                                <select name="color" class="form-select">
+                                    <option value="">All</option>
+                                    <?php foreach ($colors as $colorRow): ?>
+                                        <option value="<?php echo htmlspecialchars($colorRow['color'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($color === $colorRow['color']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($colorRow['color'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Size</label>
+                                <select name="size" class="form-select">
+                                    <option value="">All</option>
+                                    <?php foreach ($sizes as $sizeRow): ?>
+                                        <option value="<?php echo htmlspecialchars($sizeRow['size'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($size === $sizeRow['size']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($sizeRow['size'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Collection</label>
+                                <select name="collection" class="form-select">
+                                    <option value="">All</option>
+                                    <?php foreach ($collections as $collectionRow): ?>
+                                        <option value="<?php echo htmlspecialchars($collectionRow['collection_name'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($collection === $collectionRow['collection_name']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($collectionRow['collection_name'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label">Min Price</label>
                                 <input type="number" step="0.01" name="min_price" class="form-control" value="<?php echo htmlspecialchars($minPrice, ENT_QUOTES, 'UTF-8'); ?>">
                             </div>
@@ -140,7 +245,9 @@ $products = $stmt->fetchAll();
 
             <div class="col-lg-9">
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h4 class="mb-0">Products</h4>
+                    <h4 class="mb-0">
+                        <?php echo $sectionLabel !== '' ? ucfirst($sectionLabel) . ' Products' : 'Products'; ?>
+                    </h4>
                     <span class="text-muted"><?php echo count($products); ?> items</span>
                 </div>
 
@@ -154,7 +261,7 @@ $products = $stmt->fetchAll();
                         <div class="col-md-6 col-xl-4 mb-4">
                             <div class="card h-100 shadow-sm">
                                 <?php if (!empty($product['image'])): ?>
-                                    <img src="<?php echo htmlspecialchars($product['image'], ENT_QUOTES, 'UTF-8'); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8'); ?>">
+                                    <img src="<?php echo htmlspecialchars($product['image'], ENT_QUOTES, 'UTF-8'); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8'); ?>" style="height: 180px; object-fit: cover;">
                                 <?php else: ?>
                                     <div class="bg-secondary-subtle d-flex align-items-center justify-content-center" style="height: 180px;">
                                         <span class="text-muted">No Image</span>

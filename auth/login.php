@@ -100,5 +100,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="register.php">Create an account</a>
         </div>
     </div>
+
 </body>
 </html>

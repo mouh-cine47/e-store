@@ -21,6 +21,12 @@ $action = $_POST['action'] ?? '';
 $redirect = $_SERVER['HTTP_REFERER'] ?? 'cart.php';
 
 if ($action === 'add') {
+    $productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");
+    $hasProducts = (bool)$productsTableStmt->fetch();
+    if (!$hasProducts) {
+        header('Location: ' . $redirect);
+        exit();
+    }
     $productId = (int)($_POST['product_id'] ?? 0);
     $qty = (int)($_POST['qty'] ?? 1);
     if ($qty < 1) {

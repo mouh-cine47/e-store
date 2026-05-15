@@ -3,48 +3,89 @@ include '../includes/header.php';
 include '../includes/sidebar.php';
 $pdo = Database::connection();
 
+$productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");
+$hasProducts = (bool)$productsTableStmt->fetch();
+
 $search = trim($_GET['search'] ?? '');
 $params = [];
 $filters = [];
-
-if ($search !== '') {
-    $filters[] = '(p.name LIKE :search OR p.brand LIKE :search OR c.name LIKE :search)';
-    $params['search'] = '%' . $search . '%';
-}
-
 $whereSql = '';
-if (count($filters) > 0) {
-    $whereSql = 'WHERE ' . implode(' AND ', $filters);
+
+$hasCategories = false;
+$hasStock = false;
+$hasLegacyCategory = false;
+$products = [];
+
+if ($hasProducts) {
+    $tableStmt = $pdo->query("SHOW TABLES LIKE 'categories'");
+    $hasCategories = (bool)$tableStmt->fetch();
+
+    $columnStmt = $pdo->query("SHOW COLUMNS FROM products LIKE 'stock'");
+    $hasStock = (bool)$columnStmt->fetch();
+    if (!$hasStock) {
+        $legacyCategoryStmt = $pdo->query("SHOW COLUMNS FROM products LIKE 'category'");
+        $hasLegacyCategory = (bool)$legacyCategoryStmt->fetch();
+    }
+
+    if ($search !== '') {
+        $searchFields = ['p.name'];
+        if ($hasStock) {
+            $searchFields[] = 'p.brand';
+            $searchFields[] = 'p.color';
+            $searchFields[] = 'p.size';
+            $searchFields[] = 'p.collection_name';
+        }
+        if ($hasStock && $hasCategories) {
+            $searchFields[] = 'c.name';
+        } elseif (!$hasStock && $hasLegacyCategory) {
+            $searchFields[] = 'p.category';
+        }
+
+        $searchParts = [];
+        foreach ($searchFields as $index => $field) {
+            $param = 'search_' . $index;
+            $searchParts[] = $field . ' LIKE :' . $param;
+            $params[$param] = '%' . $search . '%';
+        }
+        $filters[] = '(' . implode(' OR ', $searchParts) . ')';
+    }
+
+    if (count($filters) > 0) {
+        $whereSql = 'WHERE ' . implode(' AND ', $filters);
+    }
+
+    $stockField = $hasStock ? 'p.stock' : 'p.quantity';
+    $brandField = $hasStock ? 'p.brand' : 'NULL';
+    $activeField = $hasStock ? 'p.is_active' : '1';
+
+    $categorySelect = 'NULL AS category_name';
+    $joinSql = '';
+    if ($hasStock && $hasCategories) {
+        $categorySelect = 'c.name AS category_name';
+        $joinSql = 'LEFT JOIN categories c ON c.id = p.category_id ';
+    } elseif (!$hasStock && $hasLegacyCategory) {
+        $categorySelect = 'p.category AS category_name';
+    }
+
+    if ($hasStock && $hasCategories) {
+        $sql = 'SELECT p.id, p.name, p.price, ' . $stockField . ' AS stock, ' . $activeField . ' AS is_active, '
+            . $brandField . ' AS brand, ' . $categorySelect . ' '
+            . 'FROM products p '
+            . $joinSql
+            . $whereSql . ' '
+            . 'ORDER BY p.id DESC';
+    } else {
+        $sql = 'SELECT p.id, p.name, p.price, ' . $stockField . ' AS stock, ' . $activeField . ' AS is_active, '
+            . $brandField . ' AS brand, ' . $categorySelect . ' '
+            . 'FROM products p '
+            . $whereSql . ' '
+            . 'ORDER BY p.id DESC';
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $products = $stmt->fetchAll();
 }
-
-$tableStmt = $pdo->query("SHOW TABLES LIKE 'categories'");
-$hasCategories = (bool)$tableStmt->fetch();
-
-$columnStmt = $pdo->query("SHOW COLUMNS FROM products LIKE 'stock'");
-$hasStock = (bool)$columnStmt->fetch();
-
-$stockField = $hasStock ? 'p.stock' : 'p.quantity';
-$brandField = $hasStock ? 'p.brand' : 'NULL';
-$activeField = $hasStock ? 'p.is_active' : '1';
-
-if ($hasCategories) {
-    $sql = 'SELECT p.id, p.name, p.price, ' . $stockField . ' AS stock, ' . $activeField . ' AS is_active, '
-        . $brandField . ' AS brand, c.name AS category_name '
-        . 'FROM products p '
-        . 'LEFT JOIN categories c ON c.id = p.category_id '
-        . $whereSql . ' '
-        . 'ORDER BY p.id DESC';
-} else {
-    $sql = 'SELECT p.id, p.name, p.price, ' . $stockField . ' AS stock, ' . $activeField . ' AS is_active, '
-        . $brandField . ' AS brand, NULL AS category_name '
-        . 'FROM products p '
-        . $whereSql . ' '
-        . 'ORDER BY p.id DESC';
-}
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$products = $stmt->fetchAll();
 ?>
 
 <div class="container-fluid">
@@ -56,6 +97,11 @@ $products = $stmt->fetchAll();
     <?php if (!$hasCategories): ?>
         <div class="alert alert-warning">
             The categories table is missing. Import the updated database.sql to enable categories.
+        </div>
+    <?php endif; ?>
+    <?php if (!$hasProducts): ?>
+        <div class="alert alert-warning">
+            The products table is missing. Import the updated database.sql to manage products.
         </div>
     <?php endif; ?>
     <?php if (!$hasStock): ?>

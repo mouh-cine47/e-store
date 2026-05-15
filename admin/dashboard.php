@@ -1,10 +1,20 @@
 <?php
 include '../includes/header.php';
 include '../includes/sidebar.php';
+
 $pdo = Database::connection();
 
+$productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");
+$hasProducts = (bool)$productsTableStmt->fetch();
+
+$usersTableStmt = $pdo->query("SHOW TABLES LIKE 'users'");
+$hasUsers = (bool)$usersTableStmt->fetch();
+
 // Fetch stats
-$total_products = (int)($pdo->query('SELECT COUNT(*) AS count FROM products')->fetch()['count'] ?? 0);
+$total_products = 0;
+if ($hasProducts) {
+    $total_products = (int)($pdo->query('SELECT COUNT(*) AS count FROM products')->fetch()['count'] ?? 0);
+}
 
 $ordersTableStmt = $pdo->query("SHOW TABLES LIKE 'orders'");
 $hasOrders = (bool)$ordersTableStmt->fetch();
@@ -15,7 +25,9 @@ $recentOrders = [];
 
 if ($hasOrders) {
     $total_orders = (int)($pdo->query('SELECT COUNT(*) AS count FROM orders')->fetch()['count'] ?? 0);
-    $total_users = (int)($pdo->query("SELECT COUNT(*) AS count FROM users WHERE role = 'client'")->fetch()['count'] ?? 0);
+    if ($hasUsers) {
+        $total_users = (int)($pdo->query("SELECT COUNT(*) AS count FROM users WHERE role = 'client'")->fetch()['count'] ?? 0);
+    }
     $recentOrders = $pdo->query(
         'SELECT o.id, o.total, o.status, o.created_at, u.name '
         . 'FROM orders o '
@@ -35,6 +47,16 @@ if ($hasOrders) {
     <?php if (!$hasOrders): ?>
         <div class="alert alert-warning">
             Orders table is missing. Import the updated database.sql to enable order stats.
+        </div>
+    <?php endif; ?>
+    <?php if (!$hasProducts): ?>
+        <div class="alert alert-warning">
+            Products table is missing. Import the updated database.sql to enable product stats.
+        </div>
+    <?php endif; ?>
+    <?php if (!$hasUsers): ?>
+        <div class="alert alert-warning">
+            Users table is missing. Import the updated database.sql to enable client stats.
         </div>
     <?php endif; ?>
 

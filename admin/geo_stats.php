@@ -52,7 +52,7 @@ if ($hasProductViews) {
 
     <?php if (!$hasProductViews): ?>
         <div class="alert alert-warning">
-            The geolocation table is missing. Import database_ecommerce.sql to create product_views.
+            The geolocation table is missing. Import database.sql to create product_views.
         </div>
     <?php endif; ?>
 

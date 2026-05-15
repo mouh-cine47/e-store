@@ -3,6 +3,12 @@ session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
 $pdo = Database::connection();
 
+$ordersTableStmt = $pdo->query("SHOW TABLES LIKE 'orders'");
+$hasOrders = (bool)$ordersTableStmt->fetch();
+
+$orderItemsTableStmt = $pdo->query("SHOW TABLES LIKE 'order_items'");
+$hasOrderItems = (bool)$orderItemsTableStmt->fetch();
+
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/login.php');
     exit();
@@ -13,16 +19,19 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
     exit();
 }
 
-$orderStmt = $pdo->prepare('SELECT * FROM orders WHERE user_id = :user_id ORDER BY created_at DESC');
-$orderStmt->execute(['user_id' => $_SESSION['user_id']]);
-$orders = $orderStmt->fetchAll();
+$orders = [];
+if ($hasOrders) {
+    $orderStmt = $pdo->prepare('SELECT * FROM orders WHERE user_id = :user_id ORDER BY created_at DESC');
+    $orderStmt->execute(['user_id' => $_SESSION['user_id']]);
+    $orders = $orderStmt->fetchAll();
+}
 
 $orderIds = array_map(function ($order) {
     return (int)$order['id'];
 }, $orders);
 
 $itemsByOrder = [];
-if (count($orderIds) > 0) {
+if (count($orderIds) > 0 && $hasOrderItems) {
     $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
     $itemsStmt = $pdo->prepare(
         'SELECT oi.order_id, oi.quantity, oi.price, p.name '
@@ -60,6 +69,12 @@ if (count($orderIds) > 0) {
     </nav>
 
     <div class="container py-4">
+        <?php if (!$hasOrders): ?>
+            <div class="alert alert-warning">Orders table is missing. Import database.sql to view orders.</div>
+        <?php endif; ?>
+        <?php if ($hasOrders && !$hasOrderItems): ?>
+            <div class="alert alert-warning">Order items table is missing. Import database.sql to view order details.</div>
+        <?php endif; ?>
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h4 class="mb-0">My Orders</h4>
             <a href="shop.php" class="btn btn-outline-secondary btn-sm">Continue Shopping</a>
