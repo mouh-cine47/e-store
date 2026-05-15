@@ -4,6 +4,14 @@ require_once __DIR__ . '/../app/bootstrap.php';
 
 $pdo = Database::connection();
 
+$productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");
+$hasProducts = (bool)$productsTableStmt->fetch();
+
+if (!$hasProducts) {
+    header('Location: index.php?error=missing_table');
+    exit();
+}
+
 if (isset($_GET['id'])) {
     $id = (int)$_GET['id'];
     $stmt = $pdo->prepare('DELETE FROM products WHERE id = :id');

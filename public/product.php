@@ -3,6 +3,12 @@ session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
 $pdo = Database::connection();
 
+$productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");
+$hasProducts = (bool)$productsTableStmt->fetch();
+
+$productViewsStmt = $pdo->query("SHOW TABLES LIKE 'product_views'");
+$hasProductViews = (bool)$productViewsStmt->fetch();
+
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/login.php');
     exit();
@@ -15,17 +21,21 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
 
 $productId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-$stmt = $pdo->prepare(
-    'SELECT p.id, p.name, p.description, p.price, p.stock, p.image, p.brand, c.name AS category_name '
-    . 'FROM products p '
-    . 'LEFT JOIN categories c ON c.id = p.category_id '
-    . 'WHERE p.id = :id AND p.is_active = 1 '
-    . 'LIMIT 1'
-);
-$stmt->execute(['id' => $productId]);
-$product = $stmt->fetch();
+$product = null;
+if ($hasProducts) {
+    $stmt = $pdo->prepare(
+        'SELECT p.id, p.name, p.description, p.price, p.stock, p.image, p.brand, p.color, p.size, p.collection_name, c.name AS category_name '
+        . 'FROM products p '
+        . 'LEFT JOIN categories c ON c.id = p.category_id '
+        . 'WHERE p.id = :id AND p.is_active = 1 '
+        . 'LIMIT 1'
+    );
+    $stmt->execute(['id' => $productId]);
+    $product = $stmt->fetch();
+}
 
-if ($product) {
+
+if ($product && $hasProductViews) {
     if (!isset($_SESSION['viewed_products']) || !is_array($_SESSION['viewed_products'])) {
         $_SESSION['viewed_products'] = [];
     }
@@ -77,7 +87,9 @@ if (!$product) {
     </nav>
 
     <div class="container py-4">
-        <?php if (!$product): ?>
+        <?php if (!$hasProducts): ?>
+            <div class="alert alert-warning">Products table is missing. Import database.sql to view products.</div>
+        <?php elseif (!$product): ?>
             <div class="alert alert-danger">Product not found.</div>
         <?php else: ?>
             <div class="row">
@@ -95,6 +107,15 @@ if (!$product) {
                     <p class="text-muted mb-1">Category: <?php echo htmlspecialchars($product['category_name'] ?? 'Uncategorized', ENT_QUOTES, 'UTF-8'); ?></p>
                     <?php if (!empty($product['brand'])): ?>
                         <p class="text-muted">Brand: <?php echo htmlspecialchars($product['brand'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($product['color'])): ?>
+                        <p class="text-muted">Color: <?php echo htmlspecialchars($product['color'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($product['size'])): ?>
+                        <p class="text-muted">Size: <?php echo htmlspecialchars($product['size'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($product['collection_name'])): ?>
+                        <p class="text-muted">Collection: <?php echo htmlspecialchars($product['collection_name'], ENT_QUOTES, 'UTF-8'); ?></p>
                     <?php endif; ?>
                     <div class="h4 text-primary mb-3">$<?php echo number_format($product['price'], 2); ?></div>
                     <?php if ((int)$product['stock'] <= 0): ?>

@@ -3,6 +3,17 @@ session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
 $pdo = Database::connection();
 
+$ordersTableStmt = $pdo->query("SHOW TABLES LIKE 'orders'");
+$hasOrders = (bool)$ordersTableStmt->fetch();
+
+$orderItemsTableStmt = $pdo->query("SHOW TABLES LIKE 'order_items'");
+$hasOrderItems = (bool)$orderItemsTableStmt->fetch();
+
+$productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");
+$hasProducts = (bool)$productsTableStmt->fetch();
+
+$canCheckout = $hasOrders && $hasOrderItems && $hasProducts;
+
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/login.php');
     exit();
@@ -19,10 +30,14 @@ if (count($cart) === 0) {
     exit();
 }
 
+
 $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$canCheckout) {
+        $error = 'Required tables are missing. Import database.sql to place orders.';
+    } else {
     $shippingName = trim($_POST['shipping_name'] ?? '');
     $shippingPhone = trim($_POST['shipping_phone'] ?? '');
     $shippingAddress = trim($_POST['shipping_address'] ?? '');
@@ -106,6 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = $exception->getMessage();
         }
     }
+    }
 }
 ?>
 
@@ -131,6 +147,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="container py-4">
         <h4 class="mb-3">Checkout</h4>
+
+        <?php if (!$canCheckout): ?>
+            <div class="alert alert-warning">Required tables are missing. Import database.sql to place orders.</div>
+        <?php endif; ?>
 
         <?php if ($error): ?>
             <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
@@ -172,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <input type="text" name="country" class="form-control" required>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">Place Order</button>
+                            <button type="submit" class="btn btn-primary" <?php echo $canCheckout ? '' : 'disabled'; ?>>Place Order</button>
                         </form>
                     </div>
                 </div>
@@ -197,5 +217,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+
 </body>
 </html>

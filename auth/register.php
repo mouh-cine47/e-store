@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
                 $success = 'Account created. You can now log in.';
             } catch (PDOException $exception) {
-                $error = 'Database schema is not updated. Please import database_ecommerce.sql.';
+                $error = 'Database schema is not updated. Please import database.sql.';
             }
         }
     }
@@ -117,5 +117,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="login.php">Already have an account? Login</a>
         </div>
     </div>
+
 </body>
 </html>
