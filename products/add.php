@@ -282,9 +282,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <?php if (!$isLegacySchema): ?>
                 <div class="mb-3">
-                    <label class="form-label">Product Image</label>
-                    <input type="file" name="image_file" class="form-control" accept="image/*">
+                    <label class="form-label" for="image_file">Product Image</label>
+                    <input type="file" name="image_file" id="image_file" class="form-control" accept="image/*">
                     <div class="form-text">JPG, PNG, WEBP, or GIF. Max 2MB.</div>
+                </div>
+                <div class="mb-3">
+                    <div class="image-preview-card" id="imagePreviewCard">
+                        <div class="image-preview-placeholder" id="imagePreviewPlaceholder">No image selected</div>
+                        <img src="" alt="Selected product" class="image-preview-img" id="imagePreviewImg">
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Description</label>
@@ -303,5 +309,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        const input = document.getElementById('image_file');
+        const previewImg = document.getElementById('imagePreviewImg');
+        const previewPlaceholder = document.getElementById('imagePreviewPlaceholder');
+
+        if (!input || !previewImg || !previewPlaceholder) {
+            return;
+        }
+
+        input.addEventListener('change', function (event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) {
+                previewImg.src = '';
+                previewImg.style.display = 'none';
+                previewPlaceholder.style.display = 'block';
+                return;
+            }
+
+            const objectUrl = URL.createObjectURL(file);
+            previewImg.src = objectUrl;
+            previewImg.style.display = 'block';
+            previewPlaceholder.style.display = 'none';
+
+            previewImg.onload = function () {
+                URL.revokeObjectURL(objectUrl);
+            };
+        });
+    })();
+</script>
 
 <?php include '../includes/footer.php'; ?>

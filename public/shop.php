@@ -19,6 +19,19 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
     exit();
 }
 
+function excerpt($text, $limit = 120)
+{
+    $text = trim((string)$text);
+    if ($text === '') {
+        return 'No description provided.';
+    }
+    $text = preg_replace('/\s+/', ' ', $text);
+    if (strlen($text) <= $limit) {
+        return $text;
+    }
+    return substr($text, 0, $limit - 3) . '...';
+}
+
 $search = trim($_GET['search'] ?? '');
 $categoryId = trim($_GET['category'] ?? '');
 $brand = trim($_GET['brand'] ?? '');
@@ -35,8 +48,9 @@ $params = [];
 $filters[] = 'p.is_active = 1';
 
 if ($search !== '') {
-    $filters[] = '(p.name LIKE :search OR p.description LIKE :search)';
-    $params['search'] = '%' . $search . '%';
+    $filters[] = '(p.name LIKE :search_name OR p.description LIKE :search_desc)';
+    $params['search_name'] = '%' . $search . '%';
+    $params['search_desc'] = '%' . $search . '%';
 }
 
 if ($categoryId !== '') {
@@ -122,7 +136,7 @@ if ($hasProducts) {
 
 $products = [];
 if ($hasProducts) {
-    $sql = 'SELECT p.id, p.name, p.price, p.stock, p.image, c.name AS category_name '
+    $sql = 'SELECT p.id, p.name, p.price, p.stock, p.image, p.description, c.name AS category_name '
         . 'FROM products p '
         . 'LEFT JOIN categories c ON c.id = p.category_id '
         . $whereSql . ' '
@@ -259,23 +273,26 @@ if ($hasProducts) {
                     <?php endif; ?>
                     <?php foreach ($products as $product): ?>
                         <div class="col-md-6 col-xl-4 mb-4">
-                            <div class="card h-100 shadow-sm">
-                                <?php if (!empty($product['image'])): ?>
-                                    <img src="<?php echo htmlspecialchars($product['image'], ENT_QUOTES, 'UTF-8'); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8'); ?>" style="height: 180px; object-fit: cover;">
-                                <?php else: ?>
-                                    <div class="bg-secondary-subtle d-flex align-items-center justify-content-center" style="height: 180px;">
-                                        <span class="text-muted">No Image</span>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="card-body d-flex flex-column">
-                                    <h6 class="card-title mb-1"><?php echo htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8'); ?></h6>
-                                    <small class="text-muted mb-2"><?php echo htmlspecialchars($product['category_name'] ?? 'Uncategorized', ENT_QUOTES, 'UTF-8'); ?></small>
-                                    <div class="mb-2 fw-semibold">$<?php echo number_format($product['price'], 2); ?></div>
-                                    <?php if ((int)$product['stock'] <= 0): ?>
-                                        <span class="badge bg-danger mb-3">Out of stock</span>
+                            <div class="card product-card h-100">
+                                <div class="product-card-media">
+                                    <?php if (!empty($product['image'])): ?>
+                                        <img src="<?php echo htmlspecialchars($product['image'], ENT_QUOTES, 'UTF-8'); ?>" class="product-card-img" alt="<?php echo htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8'); ?>">
                                     <?php else: ?>
-                                        <span class="badge bg-success mb-3">In stock</span>
+                                        <div class="product-card-placeholder">No Image</div>
                                     <?php endif; ?>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex align-items-start justify-content-between mb-2">
+                                        <h6 class="mb-0"><?php echo htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8'); ?></h6>
+                                        <?php if ((int)$product['stock'] <= 0): ?>
+                                            <span class="badge bg-danger">Out</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-success">In</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <small class="text-muted mb-2"><?php echo htmlspecialchars($product['category_name'] ?? 'Uncategorized', ENT_QUOTES, 'UTF-8'); ?></small>
+                                    <div class="text-primary fw-semibold mb-2">$<?php echo number_format($product['price'], 2); ?></div>
+                                    <p class="product-card-desc text-muted mb-3"><?php echo htmlspecialchars(excerpt($product['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
                                     <div class="mt-auto">
                                         <a href="product.php?id=<?php echo (int)$product['id']; ?>" class="btn btn-outline-primary w-100 mb-2">View Details</a>
                                         <?php if ((int)$product['stock'] > 0): ?>
