@@ -78,7 +78,6 @@ CREATE TABLE IF NOT EXISTS product_views (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Default admin user (password: admin123)
 INSERT INTO users (name, email, password, role)
 VALUES ('Admin', 'admin@example.com', '$2y$12$unS7Bqf87v3Y.UuzuqLoyuQOud0MEKrFlvIbRJ1bk0D.lbROehx5O', 'admin')
 ON DUPLICATE KEY UPDATE id=id;
