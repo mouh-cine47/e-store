@@ -161,6 +161,14 @@ if ($hasProducts) {
 <body>
     <nav class="navbar-modern">
         <div class="container">
+<<<<<<< HEAD
+            <a class="navbar-brand" href="shop.php">E-Store</a>
+            <div class="ms-auto d-flex align-items-center">
+                <span class="me-3 text-secondary">Hi, <?php echo htmlspecialchars($_SESSION['user_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <a href="search_by_image.php" class="btn btn-outline-info btn-sm me-2" title="Search by Image">🔍 Search Image</a>
+                <a href="cart.php" class="btn btn-outline-primary btn-sm me-2">Cart</a>
+                <a href="../auth/logout.php" class="btn btn-outline-secondary btn-sm">Logout</a>
+=======
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <a class="navbar-brand-custom" href="shop.php">
                     <i class="fas fa-shopping-bag me-2"></i>E-Store
@@ -174,6 +182,7 @@ if ($hasProducts) {
                         <i class="fas fa-sign-out-alt me-1"></i>Logout
                     </a>
                 </div>
+>>>>>>> 2e4840f04448e86c612e1cb2de30f9bf1576286f
             </div>
         </div>
     </nav>
