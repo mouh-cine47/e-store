@@ -2,6 +2,7 @@
 $requiredRole = 'admin';
 require_once __DIR__ . '/auth_check.php';
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/csrf.php';
 $pdo = Database::connection();
 ?>
 <!DOCTYPE html>

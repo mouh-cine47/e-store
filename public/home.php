@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../includes/csrf.php';
 $pdo = Database::connection();
 
 // Check if user is logged in
@@ -70,9 +71,12 @@ function excerpt($text, $limit = 100) {
                     <a href="cart.php" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">
                         <i class="fas fa-shopping-cart me-1"></i>Cart
                     </a>
-                    <a href="../auth/logout.php" class="btn btn-outline" style="padding: 8px 16px; font-size: 0.9rem;">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
+                    <form method="POST" action="../auth/logout.php" style="display: inline;">
+                        <?php csrf_field(); ?>
+                        <button type="submit" class="btn btn-outline" style="padding: 8px 16px; font-size: 0.9rem;">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -181,6 +185,7 @@ function excerpt($text, $limit = 100) {
                                 </a>
                                 <?php if ((int)$product['stock'] > 0): ?>
                                     <form method="POST" action="cart_action.php" style="flex: 1;">
+                                        <?php csrf_field(); ?>
                                         <input type="hidden" name="action" value="add">
                                         <input type="hidden" name="product_id" value="<?php echo (int)$product['id']; ?>">
                                         <button type="submit" class="btn btn-primary w-100">

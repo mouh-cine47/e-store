@@ -34,29 +34,33 @@ function uniqueSlug(PDO $pdo, $slug)
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasCategories) {
-    $action = $_POST['action'] ?? '';
+    if (!csrf_validate()) {
+        $error = 'Invalid form token. Please refresh and try again.';
+    } else {
+        $action = $_POST['action'] ?? '';
 
-    if ($action === 'create') {
-        $name = trim($_POST['name'] ?? '');
-        if ($name === '') {
-            $error = 'Category name is required.';
-        } else {
-            $slug = uniqueSlug($pdo, slugify($name));
-            $stmt = $pdo->prepare('INSERT INTO categories (name, slug) VALUES (:name, :slug)');
-            $stmt->execute([
-                'name' => $name,
-                'slug' => $slug,
-            ]);
-            $success = 'Category added.';
+        if ($action === 'create') {
+            $name = trim($_POST['name'] ?? '');
+            if ($name === '') {
+                $error = 'Category name is required.';
+            } else {
+                $slug = uniqueSlug($pdo, slugify($name));
+                $stmt = $pdo->prepare('INSERT INTO categories (name, slug) VALUES (:name, :slug)');
+                $stmt->execute([
+                    'name' => $name,
+                    'slug' => $slug,
+                ]);
+                $success = 'Category added.';
+            }
         }
-    }
 
-    if ($action === 'delete') {
-        $categoryId = (int)($_POST['category_id'] ?? 0);
-        if ($categoryId > 0) {
-            $stmt = $pdo->prepare('DELETE FROM categories WHERE id = :id');
-            $stmt->execute(['id' => $categoryId]);
-            $success = 'Category deleted.';
+        if ($action === 'delete') {
+            $categoryId = (int)($_POST['category_id'] ?? 0);
+            if ($categoryId > 0) {
+                $stmt = $pdo->prepare('DELETE FROM categories WHERE id = :id');
+                $stmt->execute(['id' => $categoryId]);
+                $success = 'Category deleted.';
+            }
         }
     }
 }
@@ -91,6 +95,7 @@ if ($hasCategories) {
                 </div>
                 <div class="card-body">
                     <form method="POST">
+                        <?php csrf_field(); ?>
                         <input type="hidden" name="action" value="create">
                         <div class="mb-3">
                             <label class="form-label">Name</label>
@@ -129,6 +134,7 @@ if ($hasCategories) {
                                             <td><?php echo htmlspecialchars($category['slug'], ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td>
                                                 <form method="POST" class="d-inline" onsubmit="return confirm('Delete this category?');">
+                                                    <?php csrf_field(); ?>
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="category_id" value="<?php echo (int)$category['id']; ?>">
                                                     <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>

@@ -1,6 +1,7 @@
 <?php
 require_once '../includes/auth_check.php';
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../includes/csrf.php';
 
 $pdo = Database::connection();
 
@@ -12,8 +13,13 @@ if (!$hasProducts) {
     exit();
 }
 
-if (isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_validate()) {
+    header('Location: index.php?error=invalid_request');
+    exit();
+}
+
+$id = (int)($_POST['id'] ?? 0);
+if ($id > 0) {
     $stmt = $pdo->prepare('DELETE FROM products WHERE id = :id');
 
     if ($stmt->execute(['id' => $id])) {

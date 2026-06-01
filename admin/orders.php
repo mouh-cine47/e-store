@@ -13,21 +13,25 @@ $itemsTableStmt = $pdo->query("SHOW TABLES LIKE 'order_items'");
 $hasOrderItems = (bool)$itemsTableStmt->fetch();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasOrders) {
-    $action = $_POST['action'] ?? '';
-    $orderId = (int)($_POST['order_id'] ?? 0);
-    $status = $_POST['status'] ?? '';
-    $allowedStatuses = ['pending', 'shipped', 'delivered'];
+    if (!csrf_validate()) {
+        $error = 'Invalid form token. Please refresh and try again.';
+    } else {
+        $action = $_POST['action'] ?? '';
+        $orderId = (int)($_POST['order_id'] ?? 0);
+        $status = $_POST['status'] ?? '';
+        $allowedStatuses = ['pending', 'shipped', 'delivered'];
 
-    if ($action === 'update_status' && $orderId > 0) {
-        if (!in_array($status, $allowedStatuses, true)) {
-            $error = 'Invalid order status.';
-        } else {
-            $stmt = $pdo->prepare('UPDATE orders SET status = :status WHERE id = :id');
-            $stmt->execute([
-                'status' => $status,
-                'id' => $orderId,
-            ]);
-            $success = 'Order status updated.';
+        if ($action === 'update_status' && $orderId > 0) {
+            if (!in_array($status, $allowedStatuses, true)) {
+                $error = 'Invalid order status.';
+            } else {
+                $stmt = $pdo->prepare('UPDATE orders SET status = :status WHERE id = :id');
+                $stmt->execute([
+                    'status' => $status,
+                    'id' => $orderId,
+                ]);
+                $success = 'Order status updated.';
+            }
         }
     }
 }
@@ -112,6 +116,7 @@ if ($hasOrders) {
                                         </div>
                                         <div class="col-lg-6">
                                             <form method="POST" class="d-flex align-items-end gap-2">
+                                                <?php csrf_field(); ?>
                                                 <input type="hidden" name="action" value="update_status">
                                                 <input type="hidden" name="order_id" value="<?php echo (int)$order['id']; ?>">
                                                 <div>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../includes/csrf.php';
 $pdo = Database::connection();
 
 $productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");
@@ -396,7 +397,10 @@ if (!$product) {
             <div class="nav-actions">
                 <span class="nav-user">Hi, <?php echo htmlspecialchars($_SESSION['user_name'], ENT_QUOTES, 'UTF-8'); ?></span>
                 <a href="cart.php" class="nav-pill">Cart</a>
-                <a href="../auth/logout.php" class="nav-pill">Logout</a>
+                <form method="POST" action="../auth/logout.php" style="display: inline;">
+                    <?php csrf_field(); ?>
+                    <button type="submit" class="nav-pill">Logout</button>
+                </form>
             </div>
         </div>
     </nav>
@@ -481,6 +485,7 @@ if (!$product) {
 
                     <?php if ((int)$product['stock'] > 0): ?>
                         <form method="POST" action="cart_action.php" class="action-row">
+                            <?php csrf_field(); ?>
                             <input type="hidden" name="action" value="add">
                             <input type="hidden" name="product_id" value="<?php echo (int)$product['id']; ?>">
                             <input type="number" name="qty" class="qty-input" min="1" max="<?php echo (int)$product['stock']; ?>" value="1">

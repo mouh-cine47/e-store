@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../includes/csrf.php';
 $pdo = Database::connection();
 
 $ordersTableStmt = $pdo->query("SHOW TABLES LIKE 'orders'");
@@ -63,7 +64,10 @@ if (count($orderIds) > 0 && $hasOrderItems) {
             <div class="ms-auto d-flex align-items-center">
                 <span class="me-3 text-secondary">Hi, <?php echo htmlspecialchars($_SESSION['user_name'], ENT_QUOTES, 'UTF-8'); ?></span>
                 <a href="cart.php" class="btn btn-outline-primary btn-sm me-2">Cart</a>
-                <a href="../auth/logout.php" class="btn btn-outline-secondary btn-sm">Logout</a>
+                <form method="POST" action="../auth/logout.php" class="d-inline">
+                    <?php csrf_field(); ?>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+                </form>
             </div>
         </div>
     </nav>
