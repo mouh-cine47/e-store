@@ -12,46 +12,51 @@ $results = [];
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
+    if (!csrf_validate()) {
+        $message = 'Invalid form token. Please refresh and try again.';
+        $messageType = 'danger';
+    } else {
+        $action = $_POST['action'] ?? '';
 
-    if ($action === 'classify_all') {
-        $allProducts = isset($_POST['all_products']) ? true : false;
-        $limit = (int)($_POST['limit'] ?? 100);
-        $results = $controller->classifyProducts($allProducts, $limit);
-        
-        if ($results['success']) {
-            $message = "Classification complete! Processed: {$results['total_classified']}, Auto-assigned: {$results['auto_assigned']}";
+        if ($action === 'classify_all') {
+            $allProducts = isset($_POST['all_products']) ? true : false;
+            $limit = (int)($_POST['limit'] ?? 100);
+            $results = $controller->classifyProducts($allProducts, $limit);
+            
+            if ($results['success']) {
+                $message = "Classification complete! Processed: {$results['total_classified']}, Auto-assigned: {$results['auto_assigned']}";
+                $messageType = 'success';
+            } else {
+                $message = 'Error: ' . $results['error'];
+                $messageType = 'danger';
+            }
+        } elseif ($action === 'train') {
+            $trainResults = $controller->trainClassifier();
+            $message = "Training complete! Processed: {$trainResults['processed']} products";
             $messageType = 'success';
-        } else {
-            $message = 'Error: ' . $results['error'];
-            $messageType = 'danger';
-        }
-    } elseif ($action === 'train') {
-        $trainResults = $controller->trainClassifier();
-        $message = "Training complete! Processed: {$trainResults['processed']} products";
-        $messageType = 'success';
-    } elseif ($action === 'classify_single') {
-        $productId = (int)($_POST['product_id'] ?? 0);
-        $results = $controller->classifyProduct($productId);
-        
-        if ($results['success']) {
-            $message = "Product classified successfully";
-            $messageType = 'success';
-        } else {
-            $message = 'Error: ' . $results['error'];
-            $messageType = 'danger';
-        }
-    } elseif ($action === 'apply_classification') {
-        $productId = (int)($_POST['product_id'] ?? 0);
-        $categoryId = (int)($_POST['category_id'] ?? 0);
-        $applyResult = $controller->applyClassification($productId, $categoryId);
-        
-        if ($applyResult['success']) {
-            $message = $applyResult['message'];
-            $messageType = 'success';
-        } else {
-            $message = 'Error: ' . $applyResult['error'];
-            $messageType = 'danger';
+        } elseif ($action === 'classify_single') {
+            $productId = (int)($_POST['product_id'] ?? 0);
+            $results = $controller->classifyProduct($productId);
+            
+            if ($results['success']) {
+                $message = "Product classified successfully";
+                $messageType = 'success';
+            } else {
+                $message = 'Error: ' . $results['error'];
+                $messageType = 'danger';
+            }
+        } elseif ($action === 'apply_classification') {
+            $productId = (int)($_POST['product_id'] ?? 0);
+            $categoryId = (int)($_POST['category_id'] ?? 0);
+            $applyResult = $controller->applyClassification($productId, $categoryId);
+            
+            if ($applyResult['success']) {
+                $message = $applyResult['message'];
+                $messageType = 'success';
+            } else {
+                $message = 'Error: ' . $applyResult['error'];
+                $messageType = 'danger';
+            }
         }
     }
 }
@@ -88,6 +93,7 @@ $categories = $categoriesStmt->fetchAll();
                 </div>
                 <div class="card-body">
                     <form method="POST">
+                        <?php csrf_field(); ?>
                         <input type="hidden" name="action" value="classify_all">
                         
                         <div class="form-group">
@@ -120,6 +126,7 @@ $categories = $categoriesStmt->fetchAll();
                     <hr>
 
                     <form method="POST" style="margin-top: 20px;">
+                        <?php csrf_field(); ?>
                         <input type="hidden" name="action" value="train">
                         <p class="text-sm text-muted">Train classifier on existing categorized products to improve accuracy.</p>
                         <button type="submit" class="btn btn-info btn-block">
@@ -138,6 +145,7 @@ $categories = $categoriesStmt->fetchAll();
                 </div>
                 <div class="card-body">
                     <form method="POST">
+                        <?php csrf_field(); ?>
                         <input type="hidden" name="action" value="classify_single">
                         
                         <div class="form-group">
@@ -197,6 +205,7 @@ $categories = $categoriesStmt->fetchAll();
                                                 </td>
                                                 <td>
                                                     <form method="POST" style="display: inline;">
+                                                        <?php csrf_field(); ?>
                                                         <input type="hidden" name="action" value="apply_classification">
                                                         <input type="hidden" name="product_id" value="<?php echo (int)$results['product_id']; ?>">
                                                         <input type="hidden" name="category_id" value="<?php 

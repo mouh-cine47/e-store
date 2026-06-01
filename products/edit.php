@@ -75,34 +75,37 @@ $hasStock = (bool)$columnStmt->fetch();
 $isLegacySchema = !$hasStock;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name'] ?? '');
-    $brand = trim($_POST['brand'] ?? '');
-    $categoryId = trim($_POST['category_id'] ?? '');
-    $newCategory = trim($_POST['new_category'] ?? '');
-    $categoryText = trim($_POST['category'] ?? '');
-    $color = trim($_POST['color'] ?? '');
-    $size = trim($_POST['size'] ?? '');
-    $collectionName = trim($_POST['collection_name'] ?? '');
-    $price = trim($_POST['price'] ?? '');
-    $stock = trim($_POST['stock'] ?? '0');
-    $quantity = trim($_POST['quantity'] ?? '0');
-    $isActive = isset($_POST['is_active']) ? 1 : 0;
-    $imagePath = $product['image'] ?? null;
-    $description = trim($_POST['description'] ?? '');
-
-    if ($name === '') {
-        $error = 'Product name is required.';
-    } elseif ($price === '' || !is_numeric($price)) {
-        $error = 'Please enter a valid price.';
-    } elseif ($isLegacySchema) {
-        if ($categoryText === '') {
-            $error = 'Category is required for the legacy schema.';
-        } elseif ($quantity === '' || !is_numeric($quantity) || (int)$quantity < 0) {
-            $error = 'Please enter a valid quantity value.';
-        }
-    } elseif ($stock === '' || !is_numeric($stock) || (int)$stock < 0) {
-        $error = 'Please enter a valid stock value.';
+    if (!csrf_validate()) {
+        $error = 'Invalid form token. Please refresh and try again.';
     } else {
+        $name = trim($_POST['name'] ?? '');
+        $brand = trim($_POST['brand'] ?? '');
+        $categoryId = trim($_POST['category_id'] ?? '');
+        $newCategory = trim($_POST['new_category'] ?? '');
+        $categoryText = trim($_POST['category'] ?? '');
+        $color = trim($_POST['color'] ?? '');
+        $size = trim($_POST['size'] ?? '');
+        $collectionName = trim($_POST['collection_name'] ?? '');
+        $price = trim($_POST['price'] ?? '');
+        $stock = trim($_POST['stock'] ?? '0');
+        $quantity = trim($_POST['quantity'] ?? '0');
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+        $imagePath = $product['image'] ?? null;
+        $description = trim($_POST['description'] ?? '');
+
+        if ($name === '') {
+            $error = 'Product name is required.';
+        } elseif ($price === '' || !is_numeric($price)) {
+            $error = 'Please enter a valid price.';
+        } elseif ($isLegacySchema) {
+            if ($categoryText === '') {
+                $error = 'Category is required for the legacy schema.';
+            } elseif ($quantity === '' || !is_numeric($quantity) || (int)$quantity < 0) {
+                $error = 'Please enter a valid quantity value.';
+            }
+        } elseif ($stock === '' || !is_numeric($stock) || (int)$stock < 0) {
+            $error = 'Please enter a valid stock value.';
+        } else {
         if ($isLegacySchema) {
             $stmt = $pdo->prepare(
                 'UPDATE products SET name = :name, category = :category, price = :price, quantity = :quantity WHERE id = :id'
@@ -208,8 +211,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $productStmt->execute(['id' => $id]);
-        $product = $productStmt->fetch();
+            $productStmt->execute(['id' => $id]);
+            $product = $productStmt->fetch();
+        }
     }
 }
 ?>
@@ -240,6 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST" enctype="multipart/form-data">
+                <?php csrf_field(); ?>
                 <div class="mb-3">
                     <label class="form-label">Product Name</label>
                     <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8'); ?>" required>

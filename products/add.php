@@ -57,7 +57,9 @@ if ($hasProducts) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!$hasProducts) {
+    if (!csrf_validate()) {
+        $error = 'Invalid form token. Please refresh and try again.';
+    } elseif (!$hasProducts) {
         $error = 'Products table is missing. Import database.sql to add products.';
     } else {
         $name = trim($_POST['name'] ?? '');
@@ -218,6 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST" enctype="multipart/form-data">
+                <?php csrf_field(); ?>
                 <div class="mb-3">
                     <label class="form-label">Product Name</label>
                     <input type="text" name="name" class="form-control" required>

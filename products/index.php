@@ -172,7 +172,11 @@ if ($hasProducts) {
                                 </div>
                                 <div class="card-footer bg-white border-0 d-flex">
                                     <a href="edit.php?id=<?php echo (int)$row['id']; ?>" class="btn btn-sm btn-info text-white me-2"><i class="fas fa-edit"></i></a>
-                                    <a href="delete.php?id=<?php echo (int)$row['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')"><i class="fas fa-trash"></i></a>
+                                    <form method="POST" action="delete.php" onsubmit="return confirm('Are you sure?');">
+                                        <?php csrf_field(); ?>
+                                        <input type="hidden" name="id" value="<?php echo (int)$row['id']; ?>">
+                                        <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
