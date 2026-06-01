@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../app/core/Email.php';
+
 $pdo = Database::connection();
 
 $ordersTableStmt = $pdo->query("SHOW TABLES LIKE 'orders'");
@@ -8,6 +10,9 @@ $hasOrders = (bool)$ordersTableStmt->fetch();
 
 $orderItemsTableStmt = $pdo->query("SHOW TABLES LIKE 'order_items'");
 $hasOrderItems = (bool)$orderItemsTableStmt->fetch();
+
+$statusHistoryTableStmt = $pdo->query("SHOW TABLES LIKE 'order_status_history'");
+$hasStatusHistory = (bool)$statusHistoryTableStmt->fetch();
 
 $productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");
 $hasProducts = (bool)$productsTableStmt->fetch();
@@ -113,9 +118,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
 
+            // Add initial status history
+            if ($hasStatusHistory) {
+                $historyStmt = $pdo->prepare(
+                    'INSERT INTO order_status_history (order_id, status, message) VALUES (:order_id, :status, :message)'
+                );
+                $historyStmt->execute([
+                    'order_id' => $orderId,
+                    'status' => 'pending',
+                    'message' => 'Order received and is being processed.'
+                ]);
+            }
+
             $pdo->commit();
             $_SESSION['cart'] = [];
-            $success = 'Order placed successfully.';
+            
+            // Send confirmation email
+            Email::sendOrderConfirmation(
+                $_SESSION['user_email'],
+                $_SESSION['user_name'],
+                $orderId,
+                number_format($total, 2)
+            );
+            
+            $success = 'Order placed successfully. Check your email for confirmation.';
         } catch (Exception $exception) {
             $pdo->rollBack();
             $error = $exception->getMessage();
