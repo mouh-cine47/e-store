@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../includes/csrf.php';
 $pdo = Database::connection();
 
 // Authentication & Authorization
@@ -1498,6 +1499,7 @@ $featuredCategories = $categories;
                     <span><?php echo htmlspecialchars(explode(' ', $_SESSION['user_name'])[0], ENT_QUOTES, 'UTF-8'); ?></span>
                     <a href="../auth/logout.php" class="navbar__logout">Sign out</a>
                 </div>
+>>>>>>> 2e4840f04448e86c612e1cb2de30f9bf1576286f
             </div>
         </div>
     </nav>
@@ -1752,46 +1754,31 @@ $featuredCategories = $categories;
                         <?php endforeach; ?>
                     </div>
 
-                    <!-- Pagination -->
-                    <?php if ($totalPages > 1): ?>
-                    <div class="pagination">
-                        <?php if ($page > 1): ?>
-                        <a href="?page=<?php echo $page - 1; ?>&sort=<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" class="pagination__link">← Previous</a>
-                        <?php else: ?>
-                        <span class="pagination__link disabled">← Previous</span>
-                        <?php endif; ?>
+                                    <p class="product-desc">
+                                        <?php echo htmlspecialchars(excerpt($product['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                    </p>
 
-                        <?php
-                        $startPage = max(1, $page - 2);
-                        $endPage = min($totalPages, $page + 2);
-                        
-                        if ($startPage > 1): ?>
-                            <a href="?page=1&sort=<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" class="pagination__link">1</a>
-                            <?php if ($startPage > 2): ?>
-                            <span class="pagination__link">...</span>
-                            <?php endif; ?>
-                        <?php endif; ?>
-
-                        <?php for ($p = $startPage; $p <= $endPage; $p++): ?>
-                            <?php if ($p === $page): ?>
-                            <span class="pagination__link active"><?php echo $p; ?></span>
-                            <?php else: ?>
-                            <a href="?page=<?php echo $p; ?>&sort=<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" class="pagination__link"><?php echo $p; ?></a>
-                            <?php endif; ?>
-                        <?php endfor; ?>
-
-                        <?php if ($endPage < $totalPages): ?>
-                            <?php if ($endPage < $totalPages - 1): ?>
-                            <span class="pagination__link">...</span>
-                            <?php endif; ?>
-                            <a href="?page=<?php echo $totalPages; ?>&sort=<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" class="pagination__link"><?php echo $totalPages; ?></a>
-                        <?php endif; ?>
-
-                        <?php if ($page < $totalPages): ?>
-                        <a href="?page=<?php echo $page + 1; ?>&sort=<?php echo htmlspecialchars($sort, ENT_QUOTES, 'UTF-8'); ?>" class="pagination__link">Next →</a>
-                        <?php else: ?>
-                        <span class="pagination__link disabled">Next →</span>
-                        <?php endif; ?>
+                                    <div class="product-actions">
+                                        <a href="product.php?id=<?php echo (int)$product['id']; ?>" class="btn btn-outline" style="flex: 1;">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                        <?php if ((int)$product['stock'] > 0): ?>
+                                            <form method="POST" action="cart_action.php" style="flex: 1;">
+                                                <input type="hidden" name="action" value="add">
+                                                <input type="hidden" name="product_id" value="<?php echo (int)$product['id']; ?>">
+                                                <button type="submit" class="btn btn-primary w-100">
+                                                    <i class="fas fa-shopping-cart me-1"></i>Add
+                                                </button>
+                                            </form>
+                                        <?php else: ?>
+                                            <button class="btn btn-secondary w-100" disabled>
+                                                <i class="fas fa-ban me-1"></i>Unavailable
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
                 <?php endif; ?>

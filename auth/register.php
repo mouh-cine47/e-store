@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../includes/csrf.php';
 $pdo = Database::connection();
 
 if (isset($_SESSION['user_id'])) {
@@ -16,6 +17,9 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_validate()) {
+        $error = 'Invalid form token. Please refresh and try again.';
+    } else {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -49,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Database schema is not updated. Please import database.sql.';
             }
         }
+    }
     }
 }
 ?>
@@ -202,6 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST">
+                <?php csrf_field(); ?>
                 <div class="form-group">
                     <label for="name">
                         <i class="fas fa-user form-icon"></i>Full Name
