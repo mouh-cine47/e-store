@@ -18,17 +18,20 @@ $historyTableStmt = $pdo->query("SHOW TABLES LIKE 'order_status_history'");
 $hasStatusHistory = (bool)$historyTableStmt->fetch();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasOrders) {
-    $action = $_POST['action'] ?? '';
-    $orderId = (int)($_POST['order_id'] ?? 0);
-    $status = $_POST['status'] ?? '';
-    $allowedStatuses = ['pending', 'shipped', 'delivered'];
+    if (!csrf_validate()) {
+        $error = 'Invalid form token. Please refresh and try again.';
+    } else {
+        $action = $_POST['action'] ?? '';
+        $orderId = (int)($_POST['order_id'] ?? 0);
+        $status = $_POST['status'] ?? '';
+        $allowedStatuses = ['pending', 'shipped', 'delivered'];
 
-    if ($action === 'update_status' && $orderId > 0) {
-        if (!in_array($status, $allowedStatuses, true)) {
-            $error = 'Invalid order status.';
-        } else {
-            // Get current order details
-            $currentStmt = $pdo->prepare('SELECT o.status, o.user_id, u.email, u.name FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = :id');
+        if ($action === 'update_status' && $orderId > 0) {
+            if (!in_array($status, $allowedStatuses, true)) {
+                $error = 'Invalid order status.';
+            } else {
+                // Get current order details
+                $currentStmt = $pdo->prepare('SELECT o.status, o.user_id, u.email, u.name FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = :id');
             $currentStmt->execute(['id' => $orderId]);
             $currentOrder = $currentStmt->fetch();
 
@@ -72,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasOrders) {
             }
         }
     }
+}
 }
 
 $orders = [];
@@ -154,6 +158,7 @@ if ($hasOrders) {
                                         </div>
                                         <div class="col-lg-6">
                                             <form method="POST" class="d-flex align-items-end gap-2">
+                                                <?php csrf_field(); ?>
                                                 <input type="hidden" name="action" value="update_status">
                                                 <input type="hidden" name="order_id" value="<?php echo (int)$order['id']; ?>">
                                                 <div>

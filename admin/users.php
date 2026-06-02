@@ -25,19 +25,23 @@ $success = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasUsers) {
-    $action = $_POST['action'] ?? '';
-    $userId = (int)($_POST['user_id'] ?? 0);
+    if (!csrf_validate()) {
+        $error = 'Invalid form token. Please refresh and try again.';
+    } else {
+        $action = $_POST['action'] ?? '';
+        $userId = (int)($_POST['user_id'] ?? 0);
 
-    if ($action === 'delete' && $userId > 0) {
-        if ($userId === (int)($_SESSION['user_id'] ?? 0)) {
-            $error = 'You cannot delete your own account.';
-        } else {
-            $deleteStmt = $pdo->prepare('DELETE FROM users WHERE id = :id AND role = :role');
-            $deleteStmt->execute([
-                'id' => $userId,
-                'role' => 'client',
-            ]);
-            $success = 'Client account removed.';
+        if ($action === 'delete' && $userId > 0) {
+            if ($userId === (int)($_SESSION['user_id'] ?? 0)) {
+                $error = 'You cannot delete your own account.';
+            } else {
+                $deleteStmt = $pdo->prepare('DELETE FROM users WHERE id = :id AND role = :role');
+                $deleteStmt->execute([
+                    'id' => $userId,
+                    'role' => 'client',
+                ]);
+                $success = 'Client account removed.';
+            }
         }
     }
 }
@@ -100,6 +104,7 @@ if ($hasUsers) {
                                 <td><?php echo htmlspecialchars($user['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td>
                                     <form method="POST" class="d-inline" onsubmit="return confirm('Delete this client?');">
+                                        <?php csrf_field(); ?>
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="user_id" value="<?php echo (int)$user['id']; ?>">
                                         <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>

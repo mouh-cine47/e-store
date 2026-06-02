@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../includes/csrf.php';
 $pdo = Database::connection();
 
 if (!isset($_SESSION['user_id'])) {
@@ -19,6 +20,11 @@ if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
 
 $action = $_POST['action'] ?? '';
 $redirect = $_SERVER['HTTP_REFERER'] ?? 'cart.php';
+
+if (!csrf_validate()) {
+    header('Location: csrf_error.php');
+    exit();
+}
 
 if ($action === 'add') {
     $productsTableStmt = $pdo->query("SHOW TABLES LIKE 'products'");

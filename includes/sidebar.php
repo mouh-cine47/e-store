@@ -25,7 +25,12 @@
         </li>
         <hr class="mx-3 bg-white opacity-25">
         <li>
-            <a href="../auth/logout.php" class="text-warning"><i class="fas fa-sign-out-alt me-2"></i> Logout</a>
+            <form method="POST" action="../auth/logout.php" class="d-inline">
+                <?php csrf_field(); ?>
+                <button type="submit" class="btn btn-link text-warning w-100 text-start px-0">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </form>
         </li>
     </ul>
 </nav>

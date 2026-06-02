@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../includes/csrf.php';
 $pdo = Database::connection();
 
 if (!isset($_SESSION['user_id'])) {
@@ -35,7 +36,10 @@ foreach ($cart as $item) {
             <div class="ms-auto d-flex align-items-center">
                 <span class="me-3 text-secondary">Hi, <?php echo htmlspecialchars($_SESSION['user_name'], ENT_QUOTES, 'UTF-8'); ?></span>
                 <a href="orders.php" class="btn btn-outline-primary btn-sm me-2">My Orders</a>
-                <a href="../auth/logout.php" class="btn btn-outline-secondary btn-sm">Logout</a>
+                <form method="POST" action="../auth/logout.php" class="d-inline">
+                    <?php csrf_field(); ?>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+                </form>
             </div>
         </div>
     </nav>
@@ -73,6 +77,7 @@ foreach ($cart as $item) {
                                 <td>$<?php echo number_format((float)$item['price'] * (int)$item['qty'], 2); ?></td>
                                 <td>
                                     <form method="POST" action="cart_action.php" class="d-inline">
+                                        <?php csrf_field(); ?>
                                         <input type="hidden" name="action" value="remove">
                                         <input type="hidden" name="product_id" value="<?php echo (int)$item['id']; ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
@@ -84,6 +89,7 @@ foreach ($cart as $item) {
                 </table>
             </div>
             <form method="POST" action="cart_action.php" id="cart-update">
+                <?php csrf_field(); ?>
                 <input type="hidden" name="action" value="update">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
