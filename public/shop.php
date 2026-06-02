@@ -1753,35 +1753,7 @@ $featuredCategories = $categories;
                         </article>
                         <?php endforeach; ?>
                     </div>
-
-                                    <p class="product-desc">
-                                        <?php echo htmlspecialchars(excerpt($product['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                                    </p>
-
-                                    <div class="product-actions">
-                                        <a href="product.php?id=<?php echo (int)$product['id']; ?>" class="btn btn-outline" style="flex: 1;">
-                                            <i class="fas fa-eye me-1"></i>View
-                                        </a>
-                                        <?php if ((int)$product['stock'] > 0): ?>
-                                            <form method="POST" action="cart_action.php" style="flex: 1;">
-                                                <input type="hidden" name="action" value="add">
-                                                <input type="hidden" name="product_id" value="<?php echo (int)$product['id']; ?>">
-                                                <button type="submit" class="btn btn-primary w-100">
-                                                    <i class="fas fa-shopping-cart me-1"></i>Add
-                                                </button>
-                                            </form>
-                                        <?php else: ?>
-                                            <button class="btn btn-secondary w-100" disabled>
-                                                <i class="fas fa-ban me-1"></i>Unavailable
-                                            </button>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
                     <?php endif; ?>
-                <?php endif; ?>
             </main>
         </div>
     </div>

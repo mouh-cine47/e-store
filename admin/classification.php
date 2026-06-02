@@ -1,12 +1,13 @@
 <?php
-include '../includes/header.php';
-include '../includes/sidebar.php';
+include __DIR__ . '/../includes/header.php';
+include __DIR__ . '/../includes/sidebar.php';
 
 $pdo = Database::connection();
-require_once '../app/controllers/ClassificationController.php';
+require_once __DIR__ . '/../app/controllers/ClassificationController.php';
 
 $controller = new ClassificationController($pdo);
 $message = '';
+
 $messageType = '';
 $results = [];
 
