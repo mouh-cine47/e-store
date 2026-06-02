@@ -1,6 +1,8 @@
 <?php
 include '../includes/header.php';
 include '../includes/sidebar.php';
+require_once '../app/core/Email.php';
+
 $pdo = Database::connection();
 
 $success = '';
@@ -11,6 +13,9 @@ $hasOrders = (bool)$tableStmt->fetch();
 
 $itemsTableStmt = $pdo->query("SHOW TABLES LIKE 'order_items'");
 $hasOrderItems = (bool)$itemsTableStmt->fetch();
+
+$historyTableStmt = $pdo->query("SHOW TABLES LIKE 'order_status_history'");
+$hasStatusHistory = (bool)$historyTableStmt->fetch();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasOrders) {
     if (!csrf_validate()) {
@@ -25,15 +30,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasOrders) {
             if (!in_array($status, $allowedStatuses, true)) {
                 $error = 'Invalid order status.';
             } else {
+                // Get current order details
+                $currentStmt = $pdo->prepare('SELECT o.status, o.user_id, u.email, u.name FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = :id');
+            $currentStmt->execute(['id' => $orderId]);
+            $currentOrder = $currentStmt->fetch();
+
+            if ($currentOrder && $currentOrder['status'] !== $status) {
+                // Update order status
                 $stmt = $pdo->prepare('UPDATE orders SET status = :status WHERE id = :id');
                 $stmt->execute([
                     'status' => $status,
                     'id' => $orderId,
                 ]);
-                $success = 'Order status updated.';
+
+                // Log status change to history
+                if ($hasStatusHistory) {
+                    $statusMessages = [
+                        'pending' => 'Order received and is being processed.',
+                        'shipped' => 'Your order is on its way!',
+                        'delivered' => 'Order has been successfully delivered.'
+                    ];
+                    $historyStmt = $pdo->prepare(
+                        'INSERT INTO order_status_history (order_id, status, message) VALUES (:order_id, :status, :message)'
+                    );
+                    $historyStmt->execute([
+                        'order_id' => $orderId,
+                        'status' => $status,
+                        'message' => $statusMessages[$status] ?? ''
+                    ]);
+                }
+
+                // Send email notification
+                Email::sendOrderStatusNotification(
+                    $currentOrder['email'],
+                    $currentOrder['name'],
+                    $orderId,
+                    $currentOrder['status'],
+                    $status
+                );
+
+                $success = 'Order status updated and customer notified via email.';
+            } else {
+                $success = 'Order status is already ' . $status . '.';
             }
         }
     }
+}
 }
 
 $orders = [];
