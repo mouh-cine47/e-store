@@ -100,16 +100,6 @@ e-store/
 | [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) | 🧪 Testing procedures |
 | [GITHUB_PUSH.md](docs/GITHUB_PUSH.md) | 🚀 GitHub deployment |
 
----
-
-## 🔑 Default Credentials
-
-```
-Email:    admin@example.com
-Password: admin
-```
-
----
 
 ## 🚀 Setup Steps
 
@@ -190,7 +180,7 @@ Automatic emails for:
 
 - **Backend:** PHP 7.4+
 - **Database:** MySQL 5.7+
-- **Frontend:** HTML5, CSS3, Bootstrap 5
+- **Frontend:** HTML5, CSS3
 - **Email:** PHP mail()
 - **Architecture:** MVC-style
 
@@ -256,5 +246,3 @@ Then read: [docs/README.md](docs/README.md)
 ---
 
 **Status:** ✅ Production Ready
-
-Made with ❤️ for e-commerce learning
