@@ -20,9 +20,6 @@
         <li class="<?php echo basename($_SERVER['PHP_SELF']) == 'categories.php' ? 'active' : ''; ?>">
             <a href="../admin/categories.php"><i class="fas fa-tags me-2"></i> Categories</a>
         </li>
-        <li class="<?php echo basename($_SERVER['PHP_SELF']) == 'classification.php' ? 'active' : ''; ?>">
-            <a href="../admin/classification.php"><i class="fas fa-brain me-2"></i> AI Classification</a>
-        </li>
         <li class="<?php echo basename($_SERVER['PHP_SELF']) == 'geo_stats.php' ? 'active' : ''; ?>">
             <a href="../admin/geo_stats.php"><i class="fas fa-map-marker-alt me-2"></i> Geo Stats</a>
         </li>
