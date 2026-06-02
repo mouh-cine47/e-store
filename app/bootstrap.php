@@ -23,6 +23,38 @@ if (is_file($envPath)) {
     }
 }
 
+function project_path($path = '')
+{
+    $base = dirname(__DIR__);
+    if ($path === '') {
+        return $base;
+    }
+
+    return $base . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+}
+
+spl_autoload_register(function ($class) {
+    $directories = [
+        __DIR__ . '/core',
+        __DIR__ . '/models',
+        __DIR__ . '/controllers',
+    ];
+
+    foreach ($directories as $directory) {
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
+        foreach ($iterator as $file) {
+            if (!$file->isFile() || $file->getFilename() !== $class . '.php') {
+                continue;
+            }
+
+            require_once $file->getPathname();
+            return;
+        }
+    }
+});
+
 require_once __DIR__ . '/core/Database.php';
 require_once __DIR__ . '/core/Geo.php';
+require_once __DIR__ . '/core/Controller.php';
+require_once __DIR__ . '/core/Model.php';
 require_once __DIR__ . '/../config/pdo.php';
