@@ -1,70 +1,104 @@
-
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - E-Store</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/dark-mode.js"></script>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-        <div class="container">
-            <a class="navbar-brand" href="shop.php">E-Store</a>
-            <div class="ms-auto d-flex align-items-center">
-                <span class="me-3 text-secondary">Hi, <?php echo htmlspecialchars($_SESSION['user_name'], ENT_QUOTES, 'UTF-8'); ?></span>
-                <a href="cart.php" class="btn btn-outline-primary btn-sm me-2">Cart</a>
-                <form method="POST" action="../auth/logout.php" class="d-inline">
-                    <?php csrf_field(); ?>
-                    <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
-                </form>
+<body>
+    <nav class="navbar navbar-modern">
+        <div class="navbar__top">
+            <a href="home.php" class="navbar__brand">
+                <i class="fas fa-shopping-bag"></i> E-Store
+            </a>
+            <div class="navbar__actions">
+                <button onclick="toggleDarkMode()" class="btn btn-outline btn-sm" title="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="cart.php" class="navbar__cart" title="Cart">
+                    <i class="fas fa-shopping-cart"></i>
+                </a>
+                <div class="navbar__user">
+                    <span><?php echo htmlspecialchars($_SESSION['user_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                    <form method="POST" action="../auth/logout.php" class="navbar__logout-form">
+                        <?php csrf_field(); ?>
+                        <button type="submit" class="btn btn-outline btn-sm">Logout</button>
+                    </form>
+                </div>
             </div>
+        </div>
+        <div class="navbar__bottom">
+            <a href="home.php" class="navbar__link">Home</a>
+            <a href="shop.php" class="navbar__link">Shop</a>
+            <a href="orders.php" class="navbar__link navbar__link--active">My Orders</a>
         </div>
     </nav>
 
-    <div class="container py-4">
-        <?php if (!$hasOrders): ?>
-            <div class="alert alert-warning">Orders table is missing. Import database.sql to view orders.</div>
-        <?php endif; ?>
-        <?php if ($hasOrders && !$hasOrderItems): ?>
-            <div class="alert alert-warning">Order items table is missing. Import database.sql to view order details.</div>
-        <?php endif; ?>
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h4 class="mb-0">My Orders</h4>
-            <a href="shop.php" class="btn btn-outline-secondary btn-sm">Continue Shopping</a>
+    <main class="container py-6 space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-semibold">My Orders</h1>
+                <p class="text-muted">Review your purchase history and order details.</p>
+            </div>
+            <a href="shop.php" class="btn btn-outline">Continue Shopping</a>
         </div>
 
-        <?php if (count($orders) === 0): ?>
-            <div class="alert alert-info">You have not placed any orders yet.</div>
+        <?php if (!isset($hasOrders) || !$hasOrders): ?>
+            <div class="alert alert-warning">
+                <h3 class="alert-title">Orders unavailable</h3>
+                <p>The orders table is missing. Import the database or connect the order history table.</p>
+            </div>
+        <?php endif; ?>
+
+        <?php if (($hasOrders ?? false) && !($hasOrderItems ?? false)): ?>
+            <div class="alert alert-warning">
+                <h3 class="alert-title">Incomplete order data</h3>
+                <p>The order items table is missing. Import database.sql to see full order details.</p>
+            </div>
+        <?php endif; ?>
+
+        <?php if (empty($orders)): ?>
+            <div class="alert alert-info">
+                <h3 class="alert-title">No orders yet</h3>
+                <p>You have not placed any orders yet. Start shopping to create your first order.</p>
+            </div>
         <?php else: ?>
-            <div class="accordion" id="ordersAccordion">
-                <?php foreach ($orders as $index => $order): ?>
-                    <div class="accordion-item mb-2">
-                        <h2 class="accordion-header" id="heading-<?php echo (int)$order['id']; ?>">
-                            <button class="accordion-button <?php echo $index === 0 ? '' : 'collapsed'; ?>" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-<?php echo (int)$order['id']; ?>" aria-expanded="true" aria-controls="collapse-<?php echo (int)$order['id']; ?>">
-                                Order #<?php echo (int)$order['id']; ?> - <?php echo htmlspecialchars($order['status'], ENT_QUOTES, 'UTF-8'); ?> - $<?php echo number_format((float)$order['total'], 2); ?>
-                            </button>
-                        </h2>
-                        <div id="collapse-<?php echo (int)$order['id']; ?>" class="accordion-collapse collapse <?php echo $index === 0 ? 'show' : ''; ?>" data-bs-parent="#ordersAccordion">
-                            <div class="accordion-body">
-                                <p class="text-muted mb-2">Placed on <?php echo htmlspecialchars($order['created_at'], ENT_QUOTES, 'UTF-8'); ?></p>
-                                <ul class="list-group">
-                                    <?php foreach ($itemsByOrder[$order['id']] ?? [] as $item): ?>
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span><?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?> (x<?php echo (int)$item['quantity']; ?>)</span>
+            <div class="space-y-4">
+                <?php foreach ($orders as $order): ?>
+                    <section class="card card-elevated">
+                        <div class="card-body space-y-4">
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                <div>
+                                    <p class="text-sm uppercase tracking-widest text-muted mb-2">Order #<?php echo (int)$order['id']; ?></p>
+                                    <h2 class="text-xl font-semibold">$<?php echo number_format((float)$order['total'], 2); ?></h2>
+                                </div>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <span class="badge badge-soft"><?php echo htmlspecialchars(ucfirst($order['status']), ENT_QUOTES, 'UTF-8'); ?></span>
+                                    <span class="text-sm text-muted"><?php echo htmlspecialchars($order['created_at'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                            </div>
+
+                            <div class="grid gap-3">
+                                <?php foreach ($itemsByOrder[$order['id']] ?? [] as $item): ?>
+                                    <div class="card card-flat p-4">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div class="text-sm">
+                                                <span class="font-medium"><?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                <span class="text-muted">x<?php echo (int)$item['quantity']; ?></span>
+                                            </div>
                                             <span>$<?php echo number_format((float)$item['price'] * (int)$item['quantity'], 2); ?></span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
                         </div>
-                    </div>
+                    </section>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </main>
 </body>
 </html>

@@ -1,101 +1,125 @@
-
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout - E-Store</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/dark-mode.js"></script>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-        <div class="container">
-            <a class="navbar-brand" href="shop.php">E-Store</a>
-            <div class="ms-auto d-flex align-items-center">
-                <span class="me-3 text-secondary">Hi, <?php echo htmlspecialchars($_SESSION['user_name'], ENT_QUOTES, 'UTF-8'); ?></span>
-                <a href="cart.php" class="btn btn-outline-primary btn-sm me-2">Cart</a>
-                <form method="POST" action="../auth/logout.php" class="d-inline">
-                    <?php csrf_field(); ?>
-                    <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
-                </form>
+<body>
+    <nav class="navbar">
+        <div class="navbar__container">
+            <a href="home.php" class="navbar__brand">
+                <i class="fas fa-shopping-bag"></i> E-Store
+            </a>
+            <div class="navbar__nav">
+                <a href="home.php" class="navbar__link">Home</a>
+                <a href="shop.php" class="navbar__link">Shop</a>
+                <a href="checkout.php" class="navbar__link active">Checkout</a>
+            </div>
+            <div class="navbar__actions">
+                <button onclick="toggleDarkMode()" class="btn btn-outline btn-sm" title="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="cart.php" class="navbar__icon-btn" title="Cart">
+                    <i class="fas fa-shopping-cart"></i>
+                </a>
+                <div class="navbar__user">
+                    <span><?php echo htmlspecialchars($_SESSION['user_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                    <form method="POST" action="../auth/logout.php" class="inline-form">
+                        <?php csrf_field(); ?>
+                        <button type="submit" class="btn btn-outline btn-sm">Logout</button>
+                    </form>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container py-4">
-        <h4 class="mb-3">Checkout</h4>
+    <main class="container py-6">
+        <header class="mb-6">
+            <h1 class="text-3xl font-semibold">Checkout</h1>
+            <p class="text-muted">Complete your order with secure delivery and payment details.</p>
+        </header>
 
         <?php if (!$canCheckout): ?>
-            <div class="alert alert-warning">Required tables are missing. Import database.sql to place orders.</div>
+            <div class="alert alert-warning mb-6">
+                <h3 class="alert-title">Checkout unavailable</h3>
+                <p>Required tables are missing. Import database.sql to place orders.</p>
+            </div>
         <?php endif; ?>
 
         <?php if ($error): ?>
-            <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
+            <div class="alert alert-danger mb-6"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
         <?php endif; ?>
+
         <?php if ($success): ?>
-            <div class="alert alert-success">
+            <div class="alert alert-success mb-6">
                 <?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?>
-                <div class="mt-2">
-                    <a href="orders.php" class="btn btn-sm btn-success">View Orders</a>
-                    <a href="shop.php" class="btn btn-sm btn-outline-secondary">Continue Shopping</a>
+                <div class="mt-4 flex flex-wrap gap-3">
+                    <a href="orders.php" class="btn btn-primary">View Orders</a>
+                    <a href="shop.php" class="btn btn-outline">Continue Shopping</a>
                 </div>
             </div>
         <?php endif; ?>
 
-        <div class="row">
-            <div class="col-lg-7">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <form method="POST">
-                            <?php csrf_field(); ?>
-                            <div class="mb-3">
-                                <label class="form-label">Full Name</label>
-                                <input type="text" name="shipping_name" class="form-control" required>
+        <div class="grid grid-cols-1 lg:grid-cols-7 gap-8">
+            <section class="lg:col-span-4 card card-elevated">
+                <div class="card-body space-y-4">
+                    <h2 class="text-xl font-semibold">Shipping Information</h2>
+                    <form method="POST" class="space-y-4">
+                        <?php csrf_field(); ?>
+                        <div>
+                            <label class="form-label" for="shipping_name">Full Name</label>
+                            <input id="shipping_name" name="shipping_name" type="text" class="form-input" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="shipping_phone">Phone</label>
+                            <input id="shipping_phone" name="shipping_phone" type="text" class="form-input" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="shipping_address">Address</label>
+                            <input id="shipping_address" name="shipping_address" type="text" class="form-input" required>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label" for="city">City</label>
+                                <input id="city" name="city" type="text" class="form-input" required>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Phone</label>
-                                <input type="text" name="shipping_phone" class="form-control" required>
+                            <div>
+                                <label class="form-label" for="country">Country</label>
+                                <input id="country" name="country" type="text" class="form-input" required>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Address</label>
-                                <input type="text" name="shipping_address" class="form-control" required>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">City</label>
-                                    <input type="text" name="city" class="form-control" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Country</label>
-                                    <input type="text" name="country" class="form-control" required>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary" <?php echo $canCheckout ? '' : 'disabled'; ?>>Place Order</button>
-                        </form>
-                    </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" <?php echo $canCheckout ? '' : 'disabled'; ?>>Place Order</button>
+                    </form>
                 </div>
-            </div>
-            <div class="col-lg-5">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Order Summary</h5>
-                        <ul class="list-group list-group-flush">
-                            <?php foreach ($cart as $item): ?>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>
-                                        <small class="text-muted">x<?php echo (int)$item['qty']; ?></small>
-                                    </div>
-                                    <span>$<?php echo number_format((float)$item['price'] * (int)$item['qty'], 2); ?></span>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+            </section>
 
+            <section class="lg:col-span-3 card card-elevated">
+                <div class="card-body space-y-4">
+                    <h2 class="text-xl font-semibold">Order Summary</h2>
+                    <?php if (empty($cart)): ?>
+                        <p class="text-muted">Your cart is empty.</p>
+                    <?php else: ?>
+                        <div class="space-y-3">
+                            <?php foreach ($cart as $item): ?>
+                                <div class="card card-flat p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p class="font-medium"><?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                            <p class="text-sm text-muted">x<?php echo (int)$item['qty']; ?></p>
+                                        </div>
+                                        <span>$<?php echo number_format((float)$item['price'] * (int)$item['qty'], 2); ?></span>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </div>
+    </main>
 </body>
 </html>
