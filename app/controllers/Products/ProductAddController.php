@@ -79,6 +79,7 @@ class ProductAddController extends Controller
                 $stock = trim($_POST['stock'] ?? '0');
                 $quantity = trim($_POST['quantity'] ?? '0');
                 $isActive = isset($_POST['is_active']) ? 1 : 0;
+                $imageUrl = trim($_POST['image_url'] ?? '');
                 $imagePath = null;
                 $description = trim($_POST['description'] ?? '');
         
@@ -163,6 +164,13 @@ class ProductAddController extends Controller
                                         $imagePath = 'uploads/products/' . $filename;
                                     }
                                 }
+                            }
+                        } elseif ($imageUrl !== '') {
+                            $scheme = strtolower((string)parse_url($imageUrl, PHP_URL_SCHEME));
+                            if (!filter_var($imageUrl, FILTER_VALIDATE_URL) || !in_array($scheme, ['http', 'https'], true)) {
+                                $error = 'Please enter a valid image URL starting with http or https.';
+                            } else {
+                                $imagePath = $imageUrl;
                             }
                         }
         

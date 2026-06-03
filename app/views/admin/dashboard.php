@@ -159,6 +159,43 @@
             </div>
         </div>
 
+        <!-- Most Visited Pages -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top 5 Most Visited Pages</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Page</th>
+                                    <th>Visits</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($mostVisitedPages)): ?>
+                                    <?php foreach ($mostVisitedPages as $page): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($page['page_title'] ?? $page['page_key'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><span class="badge badge-info"><?php echo (int)$page['view_count']; ?></span></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="2" class="text-center text-muted">No page visit data yet</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
         <!-- Sales by Category -->
         <div class="col-lg-6 mb-4">
             <div class="card shadow">

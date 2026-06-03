@@ -657,6 +657,19 @@ body.admin-body .product-card-img {
   object-fit: cover;
 }
 
+.product-collection {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--ui-sage-soft);
+  color: var(--ui-sage);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 @media (max-width: 992px) {
   body.admin-body #wrapper {
     display: block;

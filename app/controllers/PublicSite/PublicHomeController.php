@@ -20,6 +20,8 @@ class PublicHomeController extends Controller
             header('Location: ../admin/dashboard.php');
             exit();
         }
+
+        PageTracker::track($pdo, 'home', 'Home');
         
         // Get featured products
         $featuredProducts = [];

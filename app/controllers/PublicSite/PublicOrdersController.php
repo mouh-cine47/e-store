@@ -24,6 +24,8 @@ class PublicOrdersController extends Controller
             header('Location: ../admin/dashboard.php');
             exit();
         }
+
+        PageTracker::track($pdo, 'orders', 'My Orders');
         
         $orders = [];
         if ($hasOrders) {
