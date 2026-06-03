@@ -45,10 +45,43 @@ class PublicShopController extends Controller
         $brand = trim($_GET['brand'] ?? '');
         $color = trim($_GET['color'] ?? '');
         $size = trim($_GET['size'] ?? '');
+        $collection = trim($_GET['collection'] ?? '');
         $minPrice = trim($_GET['min_price'] ?? '');
         $maxPrice = trim($_GET['max_price'] ?? '');
         $sort = trim($_GET['sort'] ?? 'newest');
         $page = max(1, (int)($_GET['page'] ?? 1));
+        $section = strtolower(trim($_GET['section'] ?? ''));
+        $sectionLabels = [
+            'men' => 'Men',
+            'women' => 'Women',
+        ];
+        $isSectionPage = isset($sectionLabels[$section]);
+        $sectionTitle = $isSectionPage ? $sectionLabels[$section] . ' Collection' : 'Shop Our Collection';
+        $sectionDescription = $isSectionPage
+            ? 'Browse products selected for the ' . strtolower($sectionLabels[$section]) . ' section'
+            : 'Discover modern fashion designed for every occasion';
+        $clearUrl = $isSectionPage ? $section . '.php' : 'shop.php';
+
+        PageTracker::track($pdo, $isSectionPage ? $section : 'shop', $sectionTitle);
+        
+        // Get categories early so Men/Women pages can resolve to real category filters.
+        $categories = [];
+        $sectionCategoryId = null;
+        if ($hasCategories) {
+            $categoriesStmt = $pdo->query('SELECT id, name, slug FROM categories ORDER BY name');
+            $categories = $categoriesStmt->fetchAll();
+        
+            if ($isSectionPage) {
+                foreach ($categories as $category) {
+                    $categoryName = strtolower((string)($category['name'] ?? ''));
+                    $categorySlug = strtolower((string)($category['slug'] ?? ''));
+                    if ($categoryName === $section || $categorySlug === $section) {
+                        $sectionCategoryId = (int)$category['id'];
+                        break;
+                    }
+                }
+            }
+        }
         
         // Build WHERE clause
         $filters = [];
@@ -61,7 +94,13 @@ class PublicShopController extends Controller
             $params['search_desc'] = '%' . $search . '%';
         }
         
-        if ($categoryId !== '') {
+        if ($isSectionPage && $sectionCategoryId !== null) {
+            $filters[] = 'p.category_id = :section_category_id';
+            $params['section_category_id'] = $sectionCategoryId;
+            $categoryId = (string)$sectionCategoryId;
+        } elseif ($isSectionPage) {
+            $filters[] = '1 = 0';
+        } elseif ($categoryId !== '') {
             $filters[] = 'p.category_id = :category_id';
             $params['category_id'] = $categoryId;
         }
@@ -79,6 +118,11 @@ class PublicShopController extends Controller
         if ($size !== '') {
             $filters[] = 'p.size = :size';
             $params['size'] = $size;
+        }
+
+        if ($collection !== '') {
+            $filters[] = 'p.collection_name = :collection';
+            $params['collection'] = $collection;
         }
         
         if ($minPrice !== '' && is_numeric($minPrice)) {
@@ -116,7 +160,7 @@ class PublicShopController extends Controller
         // Fetch products with pagination
         $products = [];
         if ($hasProducts) {
-            $sql = "SELECT p.id, p.name, p.price, p.stock, p.image, p.description, p.brand, p.color, p.size, p.created_at, c.name AS category_name 
+            $sql = "SELECT p.id, p.name, p.price, p.stock, p.image, p.description, p.brand, p.color, p.size, p.collection_name, p.created_at, c.name AS category_name 
                     FROM products p 
                     LEFT JOIN categories c ON c.id = p.category_id 
                     $whereSql 
@@ -131,13 +175,6 @@ class PublicShopController extends Controller
             $stmt->bindValue(':limit', $itemsPerPage, PDO::PARAM_INT);
             $stmt->execute();
             $products = $stmt->fetchAll();
-        }
-        
-        // Get filter options for sidebar
-        $categories = [];
-        if ($hasCategories) {
-            $categoriesStmt = $pdo->query('SELECT id, name FROM categories ORDER BY name');
-            $categories = $categoriesStmt->fetchAll();
         }
         
         $brands = [];
@@ -156,6 +193,12 @@ class PublicShopController extends Controller
         if ($hasProducts) {
             $sizesStmt = $pdo->query('SELECT DISTINCT size FROM products WHERE size IS NOT NULL AND size <> "" ORDER BY size');
             $sizes = $sizesStmt->fetchAll();
+        }
+
+        $collections = [];
+        if ($hasProducts) {
+            $collectionsStmt = $pdo->query('SELECT DISTINCT collection_name FROM products WHERE collection_name IS NOT NULL AND collection_name <> "" ORDER BY collection_name');
+            $collections = $collectionsStmt->fetchAll();
         }
         
         // Get featured categories for mobile

@@ -18,6 +18,8 @@ class PublicCartController extends Controller
             header('Location: ../admin/dashboard.php');
             exit();
         }
+
+        PageTracker::track($pdo, 'cart', 'Cart');
         
         $cart = $_SESSION['cart'] ?? [];
         $total = 0.0;

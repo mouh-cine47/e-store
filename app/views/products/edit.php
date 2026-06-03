@@ -94,9 +94,13 @@
                     <label class="form-label">Product Image</label>
                     <input type="file" name="image_file" class="form-control" accept="image/*">
                     <div class="form-text">JPG, PNG, WEBP, or GIF. Max 2MB.</div>
+                    <label class="form-label mt-3" for="image_url">Or Image URL</label>
+                    <input type="url" name="image_url" id="image_url" class="form-control" placeholder="https://example.com/product.jpg" value="<?php echo (!empty($product['image']) && preg_match('/^https?:\/\//i', $product['image'])) ? htmlspecialchars($product['image'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                    <div class="form-text">Paste a new URL to replace the current image. Local upload is used first if both are provided.</div>
                     <?php if (!empty($product['image'])): ?>
                         <div class="mt-2">
-                            <img src="<?php echo htmlspecialchars($product['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="Product image" style="max-width: 140px;" class="img-thumbnail">
+                            <?php $currentImageSrc = preg_match('/^https?:\/\//i', $product['image']) ? $product['image'] : '../public/' . $product['image']; ?>
+                            <img src="<?php echo htmlspecialchars($currentImageSrc, ENT_QUOTES, 'UTF-8'); ?>" alt="Product image" style="max-width: 140px;" class="img-thumbnail">
                         </div>
                     <?php endif; ?>
                 </div>

@@ -34,6 +34,8 @@ class PublicCheckoutController extends Controller
             header('Location: ../admin/dashboard.php');
             exit();
         }
+
+        PageTracker::track($pdo, 'checkout', 'Checkout');
         
         $cart = $_SESSION['cart'] ?? [];
         if (count($cart) === 0) {

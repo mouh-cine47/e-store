@@ -101,6 +101,11 @@
                     <div class="form-text">JPG, PNG, WEBP, or GIF. Max 2MB.</div>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label" for="image_url">Or Image URL</label>
+                    <input type="url" name="image_url" id="image_url" class="form-control" placeholder="https://example.com/product.jpg">
+                    <div class="form-text">Paste an external image link. Local upload is used first if both are provided.</div>
+                </div>
+                <div class="mb-3">
                     <div class="image-preview-card" id="imagePreviewCard">
                         <div class="image-preview-placeholder" id="imagePreviewPlaceholder">No image selected</div>
                         <img src="" alt="Selected product" class="image-preview-img" id="imagePreviewImg">
@@ -127,10 +132,11 @@
 <script>
     (function () {
         const input = document.getElementById('image_file');
+        const urlInput = document.getElementById('image_url');
         const previewImg = document.getElementById('imagePreviewImg');
         const previewPlaceholder = document.getElementById('imagePreviewPlaceholder');
 
-        if (!input || !previewImg || !previewPlaceholder) {
+        if (!input || !urlInput || !previewImg || !previewPlaceholder) {
             return;
         }
 
@@ -151,6 +157,20 @@
             previewImg.onload = function () {
                 URL.revokeObjectURL(objectUrl);
             };
+        });
+
+        urlInput.addEventListener('input', function () {
+            const value = urlInput.value.trim();
+            if (!value) {
+                previewImg.src = '';
+                previewImg.style.display = 'none';
+                previewPlaceholder.style.display = 'block';
+                return;
+            }
+
+            previewImg.src = value;
+            previewImg.style.display = 'block';
+            previewPlaceholder.style.display = 'none';
         });
     })();
 </script>

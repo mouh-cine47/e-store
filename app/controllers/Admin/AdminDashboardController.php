@@ -30,6 +30,7 @@ class AdminDashboardController extends Controller
         $total_revenue = 0;
         $total_page_views = 0;
         $mostPopularProducts = [];
+        $mostVisitedPages = [];
         $salesByCategory = [];
         
         if ($hasOrders) {
@@ -51,14 +52,29 @@ class AdminDashboardController extends Controller
             );
         }
         
-        // Total page views from product_views table
+        // Total page views from page_views table
+        $pageViewsTableStmt = $pdo->query("SHOW TABLES LIKE 'page_views'");
+        $hasPageViews = (bool)$pageViewsTableStmt->fetch();
+
+        if ($hasPageViews) {
+            $pageViewsStmt = $pdo->query('SELECT COUNT(*) AS total_views FROM page_views');
+            $total_page_views = (int)($pageViewsStmt->fetch()['total_views'] ?? 0);
+
+            $mostVisitedPagesStmt = $pdo->query(
+                'SELECT page_key, page_title, COUNT(*) AS view_count '
+                . 'FROM page_views '
+                . 'GROUP BY page_key, page_title '
+                . 'ORDER BY view_count DESC '
+                . 'LIMIT 5'
+            );
+            $mostVisitedPages = $mostVisitedPagesStmt->fetchAll();
+        }
+
+        // Product popularity from product_views table
         $viewsTableStmt = $pdo->query("SHOW TABLES LIKE 'product_views'");
         $hasProductViews = (bool)$viewsTableStmt->fetch();
         
         if ($hasProductViews) {
-            $viewsStmt = $pdo->query('SELECT COUNT(*) AS total_views FROM product_views');
-            $total_page_views = (int)($viewsStmt->fetch()['total_views'] ?? 0);
-            
             // Most popular products by views
             $mostPopularStmt = $pdo->query(
                 'SELECT p.id, p.name, COUNT(v.id) AS view_count '
