@@ -40,7 +40,8 @@
                             <div class="card product-card h-100">
                                 <div class="product-card-media">
                                     <?php if (!empty($row['image'])): ?>
-                                        <img src="../public/<?php echo htmlspecialchars($row['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8'); ?>" class="product-card-img">
+                                        <?php $imageSrc = preg_match('/^https?:\/\//i', $row['image']) ? $row['image'] : '../public/' . $row['image']; ?>
+                                        <img src="<?php echo htmlspecialchars($imageSrc, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8'); ?>" class="product-card-img">
                                     <?php else: ?>
                                         <div class="product-card-placeholder">No image</div>
                                     <?php endif; ?>

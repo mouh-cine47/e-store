@@ -70,6 +70,8 @@ class PublicProductController extends Controller
         if (!$product) {
             http_response_code(404);
         }
+
+        PageTracker::track($pdo, 'product', $product ? 'Product: ' . $product['name'] : 'Product Not Found');
         $this->render('public/product', get_defined_vars());
     }
 }

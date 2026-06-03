@@ -19,6 +19,8 @@ class PublicOrderTrackingController extends Controller
             header('Location: ../auth/login.php');
             exit();
         }
+
+        PageTracker::track($pdo, 'order_tracking', 'Order Tracking');
         
         // Get order ID from URL or session
         $orderId = null;

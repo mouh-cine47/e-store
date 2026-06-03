@@ -37,7 +37,9 @@
         </div>
         <div class="navbar__bottom">
             <a href="home.php" class="navbar__link">Home</a>
-            <a href="shop.php" class="navbar__link navbar__link--active">Shop</a>
+            <a href="shop.php" class="navbar__link <?php echo empty($isSectionPage) ? 'navbar__link--active' : ''; ?>">Shop</a>
+            <a href="women.php" class="navbar__link <?php echo (!empty($section) && $section === 'women') ? 'navbar__link--active' : ''; ?>">Women</a>
+            <a href="men.php" class="navbar__link <?php echo (!empty($section) && $section === 'men') ? 'navbar__link--active' : ''; ?>">Men</a>
             <?php if (!empty($_SESSION['user_id'])): ?>
                 <a href="orders.php" class="navbar__link">My Orders</a>
             <?php endif; ?>
@@ -46,8 +48,8 @@
 
     <section class="page-hero">
         <div class="container">
-            <h1>Shop Our Collection</h1>
-            <p>Discover modern fashion designed for every occasion</p>
+            <h1><?php echo htmlspecialchars($sectionTitle ?? 'Shop Our Collection', ENT_QUOTES, 'UTF-8'); ?></h1>
+            <p><?php echo htmlspecialchars($sectionDescription ?? 'Discover modern fashion designed for every occasion', ENT_QUOTES, 'UTF-8'); ?></p>
         </div>
     </section>
 
@@ -62,7 +64,12 @@
                             <input id="search" name="search" type="search" value="<?php echo htmlspecialchars($search ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="Product name..." class="form-input">
                         </div>
 
-                        <?php if (!empty($categories)): ?>
+                        <?php if (!empty($isSectionPage)): ?>
+                            <div class="filter-group">
+                                <label>Section</label>
+                                <div class="category-chip active"><?php echo htmlspecialchars($sectionLabels[$section] ?? ucfirst($section), ENT_QUOTES, 'UTF-8'); ?></div>
+                            </div>
+                        <?php elseif (!empty($categories)): ?>
                             <div class="filter-group">
                                 <label for="category">Category</label>
                                 <select id="category" name="category" class="form-select">
@@ -86,6 +93,48 @@
                             </div>
                         <?php endif; ?>
 
+                        <?php if (!empty($colors)): ?>
+                            <div class="filter-group">
+                                <label for="color">Color</label>
+                                <select id="color" name="color" class="form-select">
+                                    <option value="">All Colors</option>
+                                    <?php foreach ($colors as $c): ?>
+                                        <option value="<?php echo htmlspecialchars($c['color'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo (isset($color) && $color === $c['color']) ? ' selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($c['color'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($sizes)): ?>
+                            <div class="filter-group">
+                                <label for="size">Size</label>
+                                <select id="size" name="size" class="form-select">
+                                    <option value="">All Sizes</option>
+                                    <?php foreach ($sizes as $s): ?>
+                                        <option value="<?php echo htmlspecialchars($s['size'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo (isset($size) && $size === $s['size']) ? ' selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($s['size'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($collections)): ?>
+                            <div class="filter-group">
+                                <label for="collection">Collection</label>
+                                <select id="collection" name="collection" class="form-select">
+                                    <option value="">All Collections</option>
+                                    <?php foreach ($collections as $col): ?>
+                                        <option value="<?php echo htmlspecialchars($col['collection_name'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo (isset($collection) && $collection === $col['collection_name']) ? ' selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($col['collection_name'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endif; ?>
+
                         <div class="filter-group">
                             <label>Price Range</label>
                             <div class="price-inputs">
@@ -98,7 +147,7 @@
                         <button type="button" class="btn btn-outline w-full" id="aiSearchButton" title="AI-Powered Search">
                             <i class="fas fa-robot"></i> AI Search
                         </button>
-                        <a href="shop.php" class="btn btn-outline w-full">Clear All</a>
+                        <a href="<?php echo htmlspecialchars($clearUrl ?? 'shop.php', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline w-full">Clear All</a>
                     </form>
                 </div>
             </aside>
@@ -106,7 +155,7 @@
             <section class="shop-content">
                 <div class="shop-header">
                     <div>
-                        <h2 class="shop-title">Products</h2>
+                        <h2 class="shop-title"><?php echo !empty($isSectionPage) ? htmlspecialchars(($sectionLabels[$section] ?? ucfirst($section)) . ' Products', ENT_QUOTES, 'UTF-8') : 'Products'; ?></h2>
                         <p class="shop-count">Showing <?php echo isset($totalProducts) ? (int)$totalProducts : 0; ?> items</p>
                     </div>
                     <div class="shop-sort">
@@ -124,7 +173,7 @@
                         <i class="fas fa-inbox"></i>
                         <h3>No Products Found</h3>
                         <p>Try adjusting your filters or search terms</p>
-                        <a href="shop.php" class="btn btn-outline mt-4">View All Products</a>
+                        <a href="<?php echo htmlspecialchars($clearUrl ?? 'shop.php', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline mt-4">Reset Filters</a>
                     </div>
                 <?php else: ?>
                     <div class="products-grid">
@@ -147,6 +196,9 @@
                                     <h3 class="product-title"><?php echo htmlspecialchars($productItem['name'], ENT_QUOTES, 'UTF-8'); ?></h3>
                                     <div class="product-footer">
                                         <span class="product-price">$<?php echo number_format((float)$productItem['price'], 2); ?></span>
+                                        <?php if (!empty($productItem['collection_name'])): ?>
+                                            <span class="product-collection"><?php echo htmlspecialchars($productItem['collection_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </a>
