@@ -9,6 +9,8 @@
 header('Content-Type: application/json; charset=utf-8');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
+require_once __DIR__ . '/../../app/bootstrap.php';
+require_once project_path('includes/csrf.php');
 
 // Créer réponse d'erreur par défaut
 function errorResponse($message, $code = 400) {
@@ -25,6 +27,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     errorResponse('Méthode non autorisée. Utiliser POST.', 405);
 }
 
+if (empty($_SESSION['user_id'])) {
+    errorResponse('Vous devez vous connecter pour utiliser la recherche par image.', 401);
+}
+
+if (!csrf_validate()) {
+    errorResponse('Jeton de sécurité invalide. Actualisez la page et réessayez.', 403);
+}
+
 // === CHARGER LA CONFIGURATION ===
 $configFile = __DIR__ . '/../../config/visual-search.php';
 if (!file_exists($configFile)) {
@@ -34,8 +44,8 @@ if (!file_exists($configFile)) {
 $config = require $configFile;
 
 // === CHARGER LES CLASSES ===
-$imageUploadFile = __DIR__ . '/../../app/core/ImageUpload.php';
-$visualSearchFile = __DIR__ . '/../../app/core/VisualSearch.php';
+$imageUploadFile = project_path('app/core/ImageUpload.php');
+$visualSearchFile = project_path('app/core/VisualSearch.php');
 
 if (!file_exists($imageUploadFile)) {
     errorResponse('Classe ImageUpload manquante', 500);
@@ -46,14 +56,6 @@ if (!file_exists($visualSearchFile)) {
 
 require_once $imageUploadFile;
 require_once $visualSearchFile;
-
-// === CHARGER LA DATABASE ===
-$pdoFile = __DIR__ . '/../../config/pdo.php';
-if (!file_exists($pdoFile)) {
-    errorResponse('Connexion database manquante', 500);
-}
-
-require_once $pdoFile;
 
 try {
     $pdo = Database::connection();

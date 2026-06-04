@@ -42,6 +42,10 @@ class VisualSearch {
             $this->error = "Fichier image introuvable: $imagePath";
             return false;
         }
+
+        if (($this->config['provider'] ?? 'clarifai') === 'imagga') {
+            return $this->analyzeWithImagga($imagePath);
+        }
         
         // Récupérer la clé API
         $apiKey = $this->config['clarifai']['api_key'] ?? null;
@@ -134,6 +138,73 @@ class VisualSearch {
         
         return $tags;
     }
+
+    private function analyzeWithImagga($imagePath)
+    {
+        $apiKey = $this->config['imagga']['api_key'] ?? null;
+        $apiSecret = $this->config['imagga']['api_secret'] ?? null;
+        $apiUrl = $this->config['imagga']['api_url'] ?? 'https://api.imagga.com/v2/tags';
+
+        if (empty($apiKey) || empty($apiSecret)) {
+            $this->error = "Clés API Imagga non configurées";
+            return false;
+        }
+
+        if (!class_exists('CURLFile')) {
+            $this->error = "L'extension cURL de PHP est requise pour Imagga";
+            return false;
+        }
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $apiUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_POST => true,
+            CURLOPT_USERPWD => $apiKey . ':' . $apiSecret,
+            CURLOPT_POSTFIELDS => [
+                'image' => new CURLFile($imagePath),
+            ],
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError) {
+            $this->error = "Erreur cURL Imagga: $curlError";
+            return false;
+        }
+
+        if ($httpCode !== 200) {
+            $this->error = "API Imagga erreur: Code HTTP $httpCode";
+            return false;
+        }
+
+        $data = json_decode($response, true);
+        if (!isset($data['result']['tags']) || !is_array($data['result']['tags'])) {
+            $this->error = "Réponse Imagga invalide";
+            return false;
+        }
+
+        $tags = [];
+        $minConfidence = $this->config['search']['min_confidence'] ?? 0.5;
+
+        foreach ($data['result']['tags'] as $tagData) {
+            $confidence = ((float)($tagData['confidence'] ?? 0)) / 100;
+            $name = $tagData['tag']['en'] ?? '';
+
+            if ($name !== '' && $confidence >= $minConfidence) {
+                $tags[] = [
+                    'name' => $name,
+                    'confidence' => round($confidence, 2),
+                ];
+            }
+        }
+
+        return $tags;
+    }
     
     /**
      * === ÉTAPE 2: Chercher les produits similaires dans MySQL ===
@@ -165,13 +236,11 @@ class VisualSearch {
         foreach ($tags as $tag) {
             $tagName = $tag['name'];
             
-            // Chercher dans les colonnes principales
-            $whereClauses[] = "(p.name LIKE ? OR p.description LIKE ? OR p.category LIKE ?)";
+            $whereClauses[] = "(p.name LIKE ? OR p.description LIKE ? OR p.brand LIKE ? OR p.color LIKE ? OR p.size LIKE ? OR p.collection_name LIKE ? OR c.name LIKE ?)";
             
-            // Ajouter le paramètre 3 fois (une pour chaque LIKE)
-            $params[] = "%$tagName%";
-            $params[] = "%$tagName%";
-            $params[] = "%$tagName%";
+            for ($i = 0; $i < 7; $i++) {
+                $params[] = "%$tagName%";
+            }
         }
         
         // Joindre avec OR
@@ -185,13 +254,19 @@ class VisualSearch {
                     p.id,
                     p.name,
                     p.price,
-                    p.category,
+                    c.name AS category,
                     p.image,
                     p.description,
-                    p.stock
+                    p.stock,
+                    p.brand,
+                    p.color,
+                    p.size,
+                    p.collection_name
                   FROM products p
+                  LEFT JOIN categories c ON c.id = p.category_id
                   WHERE $whereString
                   AND p.stock > 0
+                  AND p.is_active = 1
                   GROUP BY p.id
                   ORDER BY p.name ASC
                   LIMIT ?";

@@ -13,13 +13,30 @@ if (file_exists($envFile)) {
     $env = parse_ini_file($envFile);
     $clarifaiKey = $env['CLARIFAI_API_KEY'] ?? null;
     $clarifaiUrl = $env['CLARIFAI_API_URL'] ?? 'https://api.clarifai.com/v2/models/aaa03c23b3724a16a56b629203edc62c/outputs';
+    $imaggaKey = $env['IMAGGA_API_KEY'] ?? null;
+    $imaggaSecret = $env['IMAGGA_API_SECRET'] ?? null;
+    $imaggaUrl = $env['IMAGGA_API_URL'] ?? 'https://api.imagga.com/v2/tags';
 } else {
     $clarifaiKey = getenv('CLARIFAI_API_KEY');
     $clarifaiUrl = getenv('CLARIFAI_API_URL') ?: 'https://api.clarifai.com/v2/models/aaa03c23b3724a16a56b629203edc62c/outputs';
+    $imaggaKey = getenv('IMAGGA_API_KEY');
+    $imaggaSecret = getenv('IMAGGA_API_SECRET');
+    $imaggaUrl = getenv('IMAGGA_API_URL') ?: 'https://api.imagga.com/v2/tags';
 }
+
+$provider = (!empty($imaggaKey) && !empty($imaggaSecret)) ? 'imagga' : 'clarifai';
 
 // Configuration Visual Search
 return [
+    'provider' => $provider,
+
+    // ===== IMAGGA API =====
+    'imagga' => [
+        'api_key' => $imaggaKey,
+        'api_secret' => $imaggaSecret,
+        'api_url' => $imaggaUrl,
+    ],
+
     // ===== CLARIFAI API =====
     'clarifai' => [
         'api_key' => $clarifaiKey,
