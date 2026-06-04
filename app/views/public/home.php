@@ -49,9 +49,9 @@
                 <a href="shop.php" class="btn btn-primary btn-lg">
                     <i class="fas fa-shopping-cart"></i> Start Shopping
                 </a>
-                <button type="button" id="aiSearchBtn" class="btn btn-outline btn-lg">
-                    <i class="fas fa-robot"></i> AI Smart Search
-                </button>
+                <a href="shop.php?visual_search=1" class="btn btn-outline btn-lg">
+                    <i class="fas fa-camera"></i> Image Search
+                </a>
             </div>
         </div>
     </section>
@@ -215,16 +215,5 @@
             </div>
         </div>
     </footer>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var aiSearchBtn = document.getElementById('aiSearchBtn');
-            if (!aiSearchBtn) {
-                return;
-            }
-            aiSearchBtn.addEventListener('click', function () {
-                alert('AI Smart Search is coming soon. This placeholder will be connected to the search assistant shortly.');
-            });
-        });
-    </script>
 </body>
 </html>

@@ -145,10 +145,28 @@
 
                         <button type="submit" class="btn btn-primary w-full">Apply Filters</button>
                         <button type="button" class="btn btn-outline w-full" id="aiSearchButton" title="AI-Powered Search">
-                            <i class="fas fa-robot"></i> AI Search
+                            <i class="fas fa-camera"></i> Image Search
                         </button>
                         <a href="<?php echo htmlspecialchars($clearUrl ?? 'shop.php', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline w-full">Clear All</a>
                     </form>
+
+                    <div class="visual-search-panel" id="visualSearchPanel" hidden>
+                        <form id="visualSearchForm" class="visual-search-form" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                            <label class="visual-search-drop" for="visualSearchImage">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Upload product image</span>
+                                <small>JPG, PNG, WEBP up to 5MB</small>
+                            </label>
+                            <input type="file" name="image" id="visualSearchImage" accept="image/*" required hidden>
+                            <img src="" alt="Selected image" class="visual-search-preview" id="visualSearchPreview" hidden>
+                            <button type="submit" class="btn btn-primary w-full" id="visualSearchSubmit">
+                                <i class="fas fa-wand-magic-sparkles"></i> Find Similar Products
+                            </button>
+                        </form>
+                        <div class="visual-search-status" id="visualSearchStatus"></div>
+                        <div class="visual-search-tags" id="visualSearchTags"></div>
+                    </div>
                 </div>
             </aside>
 
@@ -217,11 +235,127 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var aiSearchButton = document.getElementById('aiSearchButton');
-            if (aiSearchButton) {
-                aiSearchButton.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    alert('🤖 AI Search feature is coming soon! Upload an image to find similar products.');
+            const aiSearchButton = document.getElementById('aiSearchButton');
+            const panel = document.getElementById('visualSearchPanel');
+            const form = document.getElementById('visualSearchForm');
+            const input = document.getElementById('visualSearchImage');
+            const preview = document.getElementById('visualSearchPreview');
+            const submit = document.getElementById('visualSearchSubmit');
+            const status = document.getElementById('visualSearchStatus');
+            const tags = document.getElementById('visualSearchTags');
+            const grid = document.querySelector('.products-grid');
+            const countText = document.querySelector('.shop-count');
+
+            if (!aiSearchButton || !panel || !form || !input || !preview || !submit || !status || !tags) {
+                return;
+            }
+
+            aiSearchButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                panel.hidden = !panel.hidden;
+            });
+
+            if (new URLSearchParams(window.location.search).get('visual_search') === '1') {
+                panel.hidden = false;
+                panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            input.addEventListener('change', function () {
+                const file = input.files && input.files[0];
+                if (!file) {
+                    preview.hidden = true;
+                    preview.src = '';
+                    return;
+                }
+
+                preview.src = URL.createObjectURL(file);
+                preview.hidden = false;
+                preview.onload = function () {
+                    URL.revokeObjectURL(preview.src);
+                };
+            });
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                if (!input.files || !input.files[0]) {
+                    status.textContent = 'Choose an image first.';
+                    status.className = 'visual-search-status is-error';
+                    return;
+                }
+
+                const formData = new FormData(form);
+                submit.disabled = true;
+                status.textContent = 'Analyzing image...';
+                status.className = 'visual-search-status is-loading';
+                tags.innerHTML = '';
+
+                try {
+                    const response = await fetch('api/visual-search.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        throw new Error(data.error || 'Image search failed.');
+                    }
+
+                    status.textContent = data.count + ' similar product' + (data.count === 1 ? '' : 's') + ' found.';
+                    status.className = 'visual-search-status is-success';
+                    tags.innerHTML = (data.tags || []).slice(0, 6).map(function (tag) {
+                        const confidence = Math.round((Number(tag.confidence) || 0) * 100);
+                        return '<span>' + escapeHtml(tag.name) + ' ' + confidence + '%</span>';
+                    }).join('');
+
+                    if (countText) {
+                        countText.textContent = 'AI image search results';
+                    }
+
+                    renderVisualResults(data.products || []);
+                } catch (error) {
+                    status.textContent = error.message;
+                    status.className = 'visual-search-status is-error';
+                } finally {
+                    submit.disabled = false;
+                }
+            });
+
+            function renderVisualResults(products) {
+                if (!grid) {
+                    return;
+                }
+
+                if (products.length === 0) {
+                    grid.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><h3>No Similar Products</h3><p>Try another image with clearer product details.</p></div>';
+                    return;
+                }
+
+                grid.innerHTML = products.map(function (product) {
+                    const image = product.image || '';
+                    const imageHtml = image
+                        ? '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(product.name) + '">'
+                        : '<div class="product-image-placeholder"><i class="fas fa-image"></i></div>';
+
+                    return '<a href="product.php?id=' + Number(product.id) + '" class="product-card">'
+                        + '<div class="product-image">' + imageHtml + '</div>'
+                        + '<div class="product-info">'
+                        + '<p class="product-brand">' + escapeHtml(product.brand || product.category || 'E-Store') + '</p>'
+                        + '<h3 class="product-title">' + escapeHtml(product.name) + '</h3>'
+                        + '<div class="product-footer"><span class="product-price">$' + Number(product.price || 0).toFixed(2) + '</span></div>'
+                        + '</div></a>';
+                });
+            }
+
+            function escapeHtml(value) {
+                return String(value || '').replace(/[&<>"']/g, function (char) {
+                    return {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#039;'
+                    }[char];
                 });
             }
         });
